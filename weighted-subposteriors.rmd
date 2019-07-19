@@ -1,0 +1,182 @@
+---
+title: "Addressing Subposterior Conflict With Weighted Proposals"
+author: "Andrew Manderson"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+fontfamily: tgpagella
+fontsize: 10pt
+papersize: a4
+geometry: margin=2.25cm
+bibliography: ../0bibliography/year-1-bib.bib
+csl: aam71-test.csl
+output: 
+  pdf_document:
+    includes:
+      in_header:
+        tex-input/pre.tex
+    fig_caption: true
+    number_sections: true
+---
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = NA, out.width = "100%", fig.align = "center", auto_pdf = TRUE, cache = TRUE, fig.width = 5, fig.asp = 0.5)
+sim_pars <- readRDS("rds/norm-norm-ex/sim-pars.rds")
+attach(sim_pars) # Needed to dynamically generate table
+```
+
+
+
+The need for accurate self-density ratio estimates arose from a conflict between $m^{\text{th}}$ stage posterior and the unknown prior marginal distribution, particularly when these things disagreed over the scale of the $(m + 1)^{\text{th}}$ stage posterior.
+However, this was just a disagreement of scale, the distributions in question were not disjoint.
+Here, we show the issue of disjoint subposteriors and suggest / demonstrate a potential solution in for Markov melding.
+
+# Manifestations of conflict: disjoint posteriors
+
+Consider the two subposteriors $\pd_{1}(\phi \mid Y_{1})$, $\pd_{2}(\phi \mid Y_{2})$, and melded posterior $\pmeld(\phi \mid Y_{1}, Y_{2})$ shown in Figure&nbsp;\ref{fig:subpost_disagreement}.
+Using the samples of the subposteriors as a proposal for the overall posterior results in a degenerate sample of the overall posterior, due to an insufficient number of samples in the support of $\pmeld(\phi \mid, Y_{1}, Y_{2})$.
+Sampling a weighted version of one of the subposteriors $\pd_{1}(\phi \mid Y_{1})\text{u}_{1}(\phi)$, the green line in Figure&nbsp;\ref{fig:subpost_disagreement}, is the idea explored here. 
+
+```{r subpost_disagreement, fig.cap = "Conflicting subposteriors."}
+knitr::include_graphics("plots/intro/subpost-disagreement.pdf")
+```
+
+# Methods - Maths
+
+Consider the overall melded target posterior for $\Nm = 2$ models
+\input{tex-input/method/0010-melded-target-posterior.tex}
+The stage one target is then
+\input{tex-input/method/0020-stage-one-target.tex}
+Hence, the stage two acceptance probability is 
+\input{tex-input/method/0030-stage-two-acceptance.tex}
+
+The presence of the $\tarw_{1}(\phi)$ terms in the stage 2 acceptance probability implies that we have some degree of control over the acceptance rate.
+The $\tarw_{1}(\phi) \pd_{1}(\phi)$ term also suggests that this idea may be more linked than we suspect to our weighted estimation methodology for the prior marginal distribution.
+
+For $\Nm > 2$, we will accrue $\tarw_{\modelindex}(\phi)$ terms, which may be problematic.
+
+## How to choose $\text{u}(x)$
+
+- is $\text{u}(x)$ the right symbol?
+    - the alphabetical successor was $\text{t}(x)$, but this looks like a t-distribution
+- What is the method here?
+    - Look at subposteriors
+    - Look at stage one samples
+    - do enough of the latter lie in the distributional product of the former? Can we formalise this?
+- What mathematical tools do we need to choose a $\text{u}(x)$ that isn't itself a distribution, what properties do we require?
+    - The idea here would be to choose something that widens the target (that isn't tempering)
+    - Really we want to map the target distribution to the maximum entropy distribution (uniform), which involves knowing the inverse mapping
+    - choose $\text{u}(x) = 1 \mathop{/} f(x; \mu, \sigma^2)^{\Nx - k}$, where k is some safety factor, and $f(x; \mu, \sigma^2)$ is the normal density.
+        - Choose $\mu = \overline{y}$?
+        - This deals with the narrowing, but doesn't address the translation
+        - $\text{u}(x) = f(x; \overline{y}_{2}, \hat{s}_{2}^2) \mathop{/} f(x; \overline{y}_{1}, \hat{s}_{1}^2)^{\Nx - k}$ can address both the narrowing
+        and the translation (sort of).
+            - what are the conditions for this to be sensible (heavy-ness of tails).
+            - This is nice because it only needs summary statistics, there is no point building a hugely complicated function that needs to look at all of the data?
+    - ~~Might as well choose $\text{u}(x) = x^{-(\Nx - k)}$?~~
+    - This is going to get overwhelmed with numerical error fairly quickly.
+    - Feels a lot like importance sampling, can we use the importance sampling results to justify approaches like this?
+        - PSIS paper has some good ideas about when IS works / fails
+    - What about the control variates idea used in subsampling MCMC, they use them to stabilise the variance of the log-posterior, but we could use them to inflate it? (I don't know about that).
+
+## Potential issues
+
+- We might get bitten by distributional concentration again (introducing another multiplicative term narrows the target), have to see
+- Feasible in 1/2/(3?) dimensions, and melding cases where $\Nm$ is $<10$?. 
+    - Trying to think of cases where it is easyish to figure out where the overall posterior will be by visual inspection.
+    - More general idea for finding "midpoint" between samples from two distributions.
+        - Seems a lot like the idea of Barycentres in: https://arxiv.org/abs/1508.05880
+- Can use ESS as a diagnostic for particle degeneracy 
+ 
+# Example - norm norm
+
+Starting from the same Normal-Normal model used to demonstrate the importance of accurately estimating the prior marginal distribution, we adjust some of the hyperparmeters to manufacture disjoint subposteriors.
+We have $\Nm = 2$ models, with common parameter $\phi$,
+\input{tex-input/norm-norm-ex/0010-norm-models.tex}
+Choosing the following values for the hyperparmeters and number of data points
+
+| Parameter             | Value           |
+|-----------------------|-----------------|
+| $\Nx_{1}$             | `r n_y_1`       |
+| $\Nx_{2}$             | `r n_y_2`       |
+| $\varepsilon_{1}^{2}$ | `r sigma_1`     |
+| $\varepsilon_{2}^{2}$ | `r sigma_2`     |
+| $\mu_{1}$             | `r mu_phi_1`    |
+| $\mu_{2}$             | `r mu_phi_2`    |
+| $\sigma_{1}^2$        | `r sigma_phi_1` |
+| $\sigma_{2}^2$        | `r sigma_phi_1` |
+
+results in the subposterior distributions in Figure&nbsp;\ref{fig:subposteriors}.
+
+```{r subposteriors, fig.cap = "subposteriors and target"}
+knitr::include_graphics("plots/norm-norm-ex/subposteriors.pdf")
+```
+
+## Stage one target and $\text{u}_{1}(\phi)$.
+
+- Choice is slightly weird
+- need to define some notation for the augmented target?
+
+```{r u_func_augmented_target, fig.cap ="$\\text{u}_{1}(\\phi)$ for various choices of $k$, and the resulting augmented target (log scale, unnormalised)."}
+knitr::include_graphics("plots/norm-norm-ex/u-function-augmented-target.pdf")
+```
+
+
+## Numerical tests
+
+We want to compare the melded posterior distribution sampled using the following methods:
+
+####  sequential MH, with no $\text{u}_{1}(\phi)$ (normal melding)
+
+Figure&nbsp;\ref{fig:no_u_traces}.
+
+```{r no_u_traces, fig.cap = "$n$-stage traceplots, no subposterior weighting"}
+knitr::include_graphics("plots/norm-norm-ex/no-u/stage-traces.pdf")
+```
+
+
+####  sequential MH, _with_ $\text{u}_{1}(\phi)$ (Idea developed here)
+
+Figure&nbsp;\ref{fig:with_u_traces}.
+Using $\text{u}(x) = f(x; \overline{y}_{2}, \hat{s}_{2}^2) \mathop{/} f(x; \overline{y}_{1}, \hat{s}_{1}^2)^{\Nx - 3}$ for the moment.
+
+Not perfect, still thinking. Also don't think I've quite got the implementation & maths correct just yet.
+Need to think more about the _right_ weighting function, but current setup allows for easy experimentation.
+
+```{r with_u_traces, fig.cap = "$n$-stage traceplots, \\textit{with} subposterior weighting."}
+knitr::include_graphics("plots/norm-norm-ex/with-u/stage-traces.pdf")
+```
+
+####  joint MH, i.e. sample $\pmeld(\phi \mid Y_{1}, Y_{2})$ all at once (it is possible here, and I'm interested in the results we get)
+
+Figure&nbsp;\ref{fig:joint_trace}
+
+```{r joint_trace, fig.cap = "trace of the melded posterior, sampled by MCMC directly."}
+knitr::include_graphics("plots/norm-norm-ex/joint/trace.pdf")
+```
+
+Comparing to Figure&nbsp;\ref{fig:with_u_traces} allows us to see we don't have the weighting function quite right yet, we have gone to far towards the second subposterior.
+
+####  Analytical truth (I _think_ this is still easy enough to calculate with $\Nx = 5$).
+
+TBA - need to do maths & implement this calculation for arbitrary number normal distributions / means.
+
+_Sun 7 Jul 15:47:26 2019_: I was very wrong about this. The algebra is slightly fiddly, but the numerics of this are just terrible. Have not yet figured out where I'm introducing the error.
+
+# Example - real world? Where can we get disjoint conflict from.
+
+- Investigate the Carlin example Rob sent
+
+<!-- -------------------- END OF MAIN BODY OF DOCUMENT -------------------- -->
+\newpage
+
+<!-- The {-} tag here suppresses the section numbering. -->
+# Bibliography {-}
+
+<!-- This makes pandoc-citeproc put the references before the end of document. -->
+<div id="refs"></div>
+
+\newpage
+
+<!-- Now switch to alphabetical numbering for the appendix, and reset the counter. -->
+\renewcommand{\thesection}{\Alph{section}}
+\setcounter{section}{0}
+
+# Appendix 
