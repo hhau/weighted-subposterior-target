@@ -23,7 +23,8 @@ data_two <- readRDS("rds/norm-norm-ex/data-model-two.rds")
 # density functions/
 product_term <- function(y_vec, y_eps, phi_mu, phi_sigma) {
   N_y <- length(y_vec)
-  
+
+  # there's nothing numerically crazy here?
   product_variance <- ((N_y / (y_eps^2)) + (1 / (phi_sigma^2)))^(-1)
   product_mean <- (((1/(y_eps^2)) * sum(y_vec)) + (phi_mu / (phi_sigma^2))) * (product_variance)
 
@@ -81,8 +82,7 @@ term_four <- product_term(
 )
 
 # !! extreme care required to deal with the log_scale_factors!!
-# numerics are horrible
-
+# numerics are horrible - don't quite understand why though? 
 max_log_scale_factor <- max(
   term_one$log_scale_factor,
   term_two$log_scale_factor,
@@ -111,7 +111,7 @@ terms_list <- list(
   term_four
 )
 
-# only pointwise
+# only pointwise - sapply out of trouble.
 analytical_posterior <- function(phi) {
   term_contributions <- lapply(terms_list, function(a_term) {
     dnorm(x = phi, mean = a_term$mean, sd = sqrt(a_term$variance)) * a_term$normalised_weight

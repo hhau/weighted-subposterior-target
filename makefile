@@ -15,7 +15,9 @@ PLOTS = plots/intro/subpost-disagreement.pdf \
 	plots/norm-norm-ex/u-function-augmented-target.pdf \
 	plots/norm-norm-ex/no-u/stage-traces.pdf \
 	plots/norm-norm-ex/with-u/stage-traces.pdf \
-	plots/norm-norm-ex/joint/trace.pdf
+	plots/norm-norm-ex/joint/trace.pdf \
+	plots/norm-norm-ex/joint-augmented-compare.pdf \
+	plots/norm-norm-ex/with-u-2/stage-traces.pdf
 
 # intermediary rds files
 SIM_PARS = rds/norm-norm-ex/sim-pars.rds
@@ -74,4 +76,27 @@ rds/norm-norm-ex/joint/phi-samples-joint.rds : scripts/norm-norm-ex/joint/joint-
 	$(RSCRIPT) $<
 
 plots/norm-norm-ex/joint/trace.pdf : scripts/norm-norm-ex/joint/plotter.R rds/norm-norm-ex/joint/phi-samples-joint.rds
+	$(RSCRIPT) $<
+
+# compare the joint at the augmented
+plots/norm-norm-ex/joint-augmented-compare.pdf : scripts/norm-norm-ex/04-compare-with-u-and-joint.R $(PLOT_SETTINGS) rds/norm-norm-ex/joint/phi-samples-joint.rds rds/norm-norm-ex/with-u/phi-samples-stage-two.rds
+	$(RSCRIPT) $<
+
+# with-u-2
+rds/norm-norm-ex/with-u-2/phi-samples-model-one.rds : scripts/norm-norm-ex/with-u-2/model-one-sampler.R $(SIM_PARS) $(DATA_MODEL_ONE) scripts/norm-norm-ex/stan-files/stage-one-target.stan
+	$(RSCRIPT) $<
+
+rds/norm-norm-ex/with-u-2/phi-samples-model-two.rds : scripts/norm-norm-ex/with-u-2/model-two-sampler.R $(SIM_PARS) $(DATA_MODEL_TWO) scripts/norm-norm-ex/stan-files/stage-one-target.stan
+	$(RSCRIPT) $<
+
+rds/norm-norm-ex/with-u-2/u-func-args.rds : scripts/norm-norm-ex/with-u-2/u-function-args.R rds/norm-norm-ex/with-u-2/phi-samples-model-one.rds rds/norm-norm-ex/with-u-2/phi-samples-model-two.rds
+	$(RSCRIPT) $<
+
+rds/norm-norm-ex/with-u-2/phi-samples-stage-one.rds : scripts/norm-norm-ex/with-u-2/augmented-stage-one-sampler.R $(SIM_PARS) $(DATA_MODEL_ONE) rds/norm-norm-ex/with-u-2/u-func-args.rds scripts/norm-norm-ex/stan-files/augmented-stage-one-target-two.stan
+	$(RSCRIPT) $<
+
+rds/norm-norm-ex/with-u-2/phi-samples-stage-two.rds : scripts/norm-norm-ex/with-u-2/stage-two-sampler.R $(SIM_PARS) $(DATA_MODEL_TWO) rds/norm-norm-ex/with-u-2/u-func-args.rds rds/norm-norm-ex/with-u-2/phi-samples-stage-one.rds
+	$(RSCRIPT) $<
+
+plots/norm-norm-ex/with-u-2/stage-traces.pdf : scripts/norm-norm-ex/with-u-2/plotter.R $(PLOT_SETTINGS) rds/norm-norm-ex/with-u-2/phi-samples-stage-one.rds rds/norm-norm-ex/with-u-2/phi-samples-stage-two.rds
 	$(RSCRIPT) $<

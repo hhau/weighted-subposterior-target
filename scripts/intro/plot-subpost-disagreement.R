@@ -15,7 +15,7 @@ p1 <- ggplot(p_df, aes(x = x)) +
       "p1" = "'p'[1](phi~'|'~'Y'[1])",
       "p2" = "'p'[2](phi~'|'~'Y'[2])",
       "pmeld" = "'p'['meld'](phi~'|'~'Y'[2],'Y'[1])",
-      "pz1_w1" = "'p'[1](phi~'|'~'Y'[1])~'u'[1](phi)"
+      "pz1_w1" = "'p'[1](phi~'|'~'Y'[1])~'u'[1](phi~';'~eta[1])"
     )),
     values = c(
       "p1" = blues['mid'] %>% as.character(),

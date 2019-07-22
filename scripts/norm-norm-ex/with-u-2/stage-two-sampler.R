@@ -2,8 +2,8 @@ library(futile.logger)
 
 sim_pars <- readRDS("rds/norm-norm-ex/sim-pars.rds")
 stage_two_data <- readRDS("rds/norm-norm-ex/data-model-two.rds")
-u_func_args <- readRDS("rds/norm-norm-ex/with-u/u-func-args.rds")
-stage_one_samples <- readRDS("rds/norm-norm-ex/with-u/phi-samples-stage-one.rds")
+u_func_args <- readRDS("rds/norm-norm-ex/with-u-2/u-func-args.rds")
+stage_one_samples <- readRDS("rds/norm-norm-ex/with-u-2/phi-samples-stage-one.rds")
 
 n_samples <- length(stage_one_samples)
 stage_two_samples <- array(NA, dim = n_samples)
@@ -18,8 +18,8 @@ p_pool_phi <- function(phi) {
 log_u_func <- function(phi) {
   with(u_func_args, {
     res <-
-      dnorm(phi, mean = mu_u, sd = sd_u, log = TRUE) -
-      (length(stage_two_data$y) - k) * dnorm(phi, mean = y_1_mean, sd = y_1_sd, log = TRUE) 
+      dnorm(phi, mean = mu_nu, sd = sqrt(var_nu), log = TRUE) -
+      dnorm(phi, mean = mu_de, sd = sqrt(var_de), log = TRUE) 
     return(res) 
   })
 }
@@ -53,6 +53,6 @@ for (ii in 2:n_samples) {
 }
 
 saveRDS(
-  file = "rds/norm-norm-ex/with-u/phi-samples-stage-two.rds",
+  file = "rds/norm-norm-ex/with-u-2/phi-samples-stage-two.rds",
   object = stage_two_samples
 )

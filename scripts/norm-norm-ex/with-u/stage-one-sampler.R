@@ -13,7 +13,9 @@ stan_data <- list(
   y_1_sd = u_func_args$y_1_sd,
   y_2_mean = u_func_args$y_2_mean,
   y_2_sd = u_func_args$y_2_sd,
-  k = 3
+  k = 3,
+  mu_u = u_func_args$mu_u,
+  sd_u = u_func_args$sd_u
 )
 
 model_fit <- sampling(

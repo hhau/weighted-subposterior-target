@@ -109,21 +109,21 @@ p1 <- ggplot(p_df, aes(x = x)) +
     n = 501,
     mapping = aes(col = "ppost2")
   ) +
-  stat_function(
-    fun = function(x) stage_one_target(x) / nc_target_one$value,
-    n = 501,
-    mapping = aes(col = "ptarget1")
-  ) +
+  # stat_function(
+  #   fun = function(x) stage_one_target(x) / nc_target_one$value,
+  #   n = 501,
+  #   mapping = aes(col = "ptarget1")
+  # ) +
   scale_colour_manual(
     labels = parsed_map(c(
       "ppost1" = "'p'[1](phi~'|'~'Y'[1])",
-      "ppost2" = "'p'[2](phi~'|'~'Y'[2])",
-      "ptarget1" = "'p'['meld, 1'](phi~'|'~'Y'[1])"
+      "ppost2" = "'p'[2](phi~'|'~'Y'[2])"#,
+      # "ptarget1" = "'p'['meld, 1'](phi~'|'~'Y'[1])"
     )),
     values = c(
       "ppost1" = as.character(blues['mid']),
-      "ppost2" = greens[2],
-      "ptarget1" = highlight_col
+      "ppost2" = greens[2]#,
+      # "ptarget1" = highlight_col
     )
   ) +
   xlab(expression(phi)) +
@@ -147,7 +147,10 @@ u_1 <- function(phi, safe_fac = 3, log_scale = TRUE) {
   mu_y_2 <- mean(stage_two_data$y)
   var_y_2 <- var(stage_two_data$y)
   
-  log_res <- dnorm(phi, mean = mu_y_2, sd = sqrt(var_y_2), log = TRUE) -
+  mu_u <- (var_y_1 * mu_y_2 + var_y_2 * mu_y_1) / (var_y_1 + var_y_2)
+  var_u <- (var_y_1 * var_y_2) / (var_y_1 + var_y_2)
+  
+  log_res <- dnorm(phi, mean = mu_u, sd = sqrt(var_u), log = TRUE) -
       (N - k) * dnorm(phi, mean = mu_y_1, sd = sqrt(var_y_1), log = TRUE)
   
   if (log_scale) {
@@ -205,6 +208,7 @@ u_p_aug_plot <- ggplot(combo_df, aes(x = x, y = y, col = k)) +
   NULL
   
 ## TODO: Improve this plot once i'm convinced this idea has legs
+# u_p_aug_plot
 
 ggsave_halfheight(
   file = "plots/norm-norm-ex/u-function-augmented-target.pdf",
