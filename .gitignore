@@ -16,3 +16,7 @@
 # the knitr cache
 *_cache
 *_files
+
+# sometimes weird tex things get produced
+*.aux
+*.out

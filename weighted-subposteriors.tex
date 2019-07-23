@@ -1,0 +1,662 @@
+\documentclass[10pt,a4paper,]{article}
+\usepackage[]{tgpagella}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=2.25cm]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={Addressing Subposterior Conflict With Weighted Proposals},
+            pdfauthor={Andrew Manderson},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{5}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\providecommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{Addressing Subposterior Conflict With Weighted Proposals}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{Andrew Manderson}
+    \preauthor{\centering\large\emph}
+  \postauthor{\par}
+      \predate{\centering\large\emph}
+  \postdate{\par}
+    \date{23 July, 2019}
+
+\usepackage{amsmath}
+% I always seem to need tikz for something
+\usepackage{tikz}
+\usetikzlibrary{positioning, shapes, intersections, through, backgrounds, fit, decorations.pathmorphing}
+
+\usepackage{setspace}
+\onehalfspacing
+
+\usepackage{lineno}
+% \linenumbers
+
+% required for landscape pages. beware, they back the build very slow.
+\usepackage{pdflscape}
+
+% table - `gt' package uses these, often unimportant
+% \usepackage{longtable}
+% \usepackage{booktabs}
+% \usepackage{caption}
+
+\setcounter{secnumdepth}{3}
+
+% pd stands for: probability distribution and is useful to distringuish
+% marignals for probabilities specifically p(p_{1}) and the like.
+\newcommand{\pd}{\text{p}}
+\newcommand{\q}{\text{q}}
+\newcommand{\w}{\text{w}}
+\newcommand{\pdr}{\text{r}}
+\newcommand{\pdrh}{\hat{\text{r}}}
+
+% melding
+\newcommand{\ppoolphi}{\pd_{\text{pool}}(\phi)}
+\newcommand{\pmeld}{\pd_{\text{meld}}}
+
+% the q(x)w(x), "weighted target" density 
+% for the moment I'm going to call it s(x), as that is the next letter of the 
+% alphabet. Can change it later
+\newcommand{\s}{\text{s}}
+% direct density estimate - replaces lambda.
+\newcommand{\ddest}{\text{s}}
+% target weighting function
+\newcommand{\tarw}{\text{u}}
+
+% constants - usually sizes of things
+\newcommand{\Nx}{N}
+\newcommand{\Nnu}{\text{N}_{\text{nu}}}
+\newcommand{\Nde}{\text{N}_{\text{de}}}
+\newcommand{\Nmc}{\text{N}_{\text{mc}}}
+\newcommand{\Nw}{W}
+\newcommand{\Nm}{M}
+
+% locales - could switch to x and x'
+\newcommand{\xnu}{x_{\text{nu}}}
+\newcommand{\xde}{x_{\text{de}}}
+
+% sugiyama stuff
+\newcommand{\pdnu}{\pd_{\text{nu}}}
+\newcommand{\pdde}{\pd_{\text{de}}}
+
+% indices 
+\newcommand{\wfindex}{w}
+\newcommand{\sampleindex}{n}
+\newcommand{\modelindex}{m}
+
+%% operators that need additional spacing
+\newcommand{\wpropto}{\,\,\propto\,\,}
+
+\begin{document}
+\maketitle
+
+The need for accurate self-density ratio estimates arose from a conflict
+between \((m - 1)^{\text{th}}\) stage posterior and the unknown
+\(m^{\text{th}}\) model's prior marginal distribution. This was purely a
+disagreement of scale, the distributions in question did not have
+disjoint supports. This document considers subposteriors with disjoint
+supports, and demonstrates some potential solutions.
+
+\section{Disjoint subposteriors}\label{disjoint-subposteriors}
+
+Consider the two subposteriors \(\pd_{1}(\phi \mid Y_{1})\),
+\(\pd_{2}(\phi \mid Y_{2})\), and melded posterior
+\(\pmeld(\phi \mid Y_{1}, Y_{2})\) shown in
+Figure~\ref{fig:subpost_disagreement}. Using the samples of either of
+the subposteriors as a proposal for the overall posterior results in a
+degenerate sample of the overall posterior, due to an insufficient
+number of samples in the support of \(\pmeld(\phi \mid, Y_{1}, Y_{2})\).
+If instead we sample a version of one of the subposteriors which is
+\emph{augmented} by a function \(\tarw_{1}(\phi; \eta_{1})\),
+i.e.~\(\pd_{1}(\phi \mid Y_{1})\tarw_{1}(\phi; \eta_{1})\), we can
+control the stage two acceptance probability through
+\(\tarw_{1}(\phi; \eta_{1})\). The green line in
+Figure~\ref{fig:subpost_disagreement} illustrates how we can suitably
+scale and shift the stage one target.
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\linewidth]{plots/intro/subpost-disagreement} 
+
+}
+
+\caption{Hypothetical conflicting subposteriors (blue), melded posterior (red), and the augmented stage one one target (green, dashed).}\label{fig:subpost_disagreement}
+\end{figure}
+
+The general problem concerns instances where the support of
+\(\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1} \mid Y_{1}, \ldots, Y_{\modelindex - 1})\)
+does not intersect with the support of
+\(\pd_{\text{meld}, \modelindex}(\phi, \psi_{1}, \ldots, \psi_{\modelindex} \mid Y_{1}, \ldots, Y_{\modelindex})\),
+hence also does not overlap with
+\(\pd_{\modelindex}(\phi,~\psi_{\modelindex}~\mid~Y_{\modelindex})\). We
+must choose the functional form of
+\(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\), as well as
+the parameter \(\eta_{\modelindex - 1}\), such that the supports of
+\(\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1} \mid Y_{1}, \ldots, Y_{\modelindex - 1})\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\)
+and
+\(\pd_{\text{meld}, \modelindex}(\phi, \psi_{1}, \ldots, \psi_{\modelindex} \mid Y_{1}, \ldots, Y_{\modelindex})\)
+intersect.
+
+\section{Methods - Maths}\label{methods---maths}
+
+Consider the overall melded target posterior for \(\Nm = 2\) models
+\input{tex-input/method/0010-melded-target-posterior.tex} The
+\emph{augmented stage one target} is then
+\input{tex-input/method/0020-stage-one-target.tex} Hence, the stage two
+acceptance probability is
+\input{tex-input/method/0030-stage-two-acceptance.tex}
+
+The presence of the \(\tarw_{1}(\phi; \eta_{1})\) terms in the stage 2
+acceptance probability implies that we have some degree of control over
+the acceptance rate. The \(\pd_{2}(\phi) \tarw_{1}(\phi; \eta_{1})\)
+term also suggests that this idea may be more linked than we suspect to
+our weighted estimation methodology for the prior marginal distribution.
+
+For \(\Nm > 2\), we will accrue an additional
+\(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\) term for each
+additional model, which may be problematic.
+
+\subsection{\texorpdfstring{Choosing
+\(\tarw_{\modelindex}(\phi; \eta_{\modelindex})\)}{Choosing \textbackslash{}tarw\_\{\textbackslash{}modelindex\}(\textbackslash{}phi; \textbackslash{}eta\_\{\textbackslash{}modelindex\})}}\label{choosing-tarw_modelindexphi-eta_modelindex}
+
+\subsubsection{Using summary statistics, assuming distribution is
+Normal}\label{using-summary-statistics-assuming-distribution-is-normal}
+
+Say we use the samples of \(\phi\) from
+\(\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1} \mid Y_{1}, \ldots, Y_{\modelindex - 1})\)
+as a proposal for
+\(\pd_{\text{meld}, \modelindex}(\phi, \psi_{1}, \ldots, \psi_{\modelindex} \mid Y_{1}, \ldots, Y_{\modelindex})\)
+and observe the behaviour in Figure~\ref{fig:no_u_traces}. We can still
+use these samples, in combination with samples from
+\(\pd_{\modelindex}(\phi, \psi_{\modelindex} \mid Y_{\modelindex})\), to
+choose an appropriate
+\(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\).
+
+Define:
+
+\begin{itemize}
+\item
+  \(\{\tilde{\phi}_{\sampleindex, \modelindex - 1}\}_{\sampleindex = 1, \ldots, \Nx}\)
+  is a sample of size \(\Nx\) from
+  \(\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1} \mid Y_{1}, \ldots, Y_{\modelindex - 1})\).
+
+  \begin{itemize}
+  \tightlist
+  \item
+    I am using the tilde to differentiate between samples from the
+    intermediary targets and samples from individual subposteriors.
+  \end{itemize}
+\item
+  \(\tilde{\mu}_{\modelindex - 1} = \frac{1}{\Nx}\sum\limits_{i = 1}^{\Nx}\tilde{\phi}_{\sampleindex, \modelindex - 1}\),
+  the empirical mean of the \((\modelindex - 1)^{\text{th}}\) stage
+  melded posterior.
+\item
+  \(\tilde{\sigma}^{2}_{\modelindex - 1} = \frac{1}{\Nx - 1}\sum\limits_{i = 1}^{\Nx} (\tilde{\phi}_{\sampleindex, \modelindex - 1} - \tilde{\mu}_{\modelindex - 1})^{2}\),
+  the empirical variance of the \((\modelindex - 1)^{\text{th}}\) stage
+  melded posterior.
+\end{itemize}
+
+Likewise,
+
+\begin{itemize}
+\tightlist
+\item
+  \(\{\phi_{\sampleindex, \modelindex}\}_{\sampleindex = 1, \ldots, \Nx}\)
+  is a sample of size \(\Nx\) from
+  \(\pd_{\modelindex}(\phi, \psi_{\modelindex} \mid Y_{\modelindex})\).
+\item
+  \(\mu_{\modelindex} = \frac{1}{\Nx}\sum\limits_{i = 1}^{\Nx}\phi_{\sampleindex, \modelindex}\),
+  the empirical mean of the \(\modelindex^{\text{th}}\) subposterior.
+\item
+  \(\sigma^{2}_{\modelindex} = \frac{1}{\Nx - 1}\sum\limits_{i = 1}^{\Nx} (\phi_{\sampleindex, \modelindex} - \mu_{\modelindex})^{2}\),
+  the empirical variance of the \(\modelindex^{\text{th}}\)
+  subposterior.
+\end{itemize}
+
+Next,
+
+\begin{itemize}
+\item
+  \(k = 1.05\), some safety factor.
+
+  \begin{itemize}
+  \tightlist
+  \item
+    We need some safety factor to ensure the target is integrable.
+  \item
+    The integrability of the resulting target is a complicated function
+    of the posterior and the space of possible
+    \(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\) functions.
+  \item
+    The tail behaviour is going to be important again.
+
+    \begin{itemize}
+    \tightlist
+    \item
+      Seems to be a recurrent theme.
+    \end{itemize}
+  \end{itemize}
+\item
+  \(\mu_{\text{de}} = \tilde{\mu}_{\modelindex - 1}\)
+\item
+  \(\sigma^{2}_{\text{de}} = k \tilde{\sigma}^{2}_{\modelindex - 1}\)
+\item
+  \(\mu_{\text{nu}} = \frac{\tilde{\sigma}^{2}_{\modelindex - 1} \mu_{\modelindex} + \sigma^{2}_{\modelindex}\tilde{\mu}_{\modelindex - 1}} {\tilde{\sigma}^{2}_{\modelindex - 1} + \sigma^{2}_{\modelindex}}\)
+\item
+  \(\sigma^{2}_{\text{nu}} = \frac{\tilde{\sigma}^{2}_{\modelindex - 1} \sigma^{2}_{\modelindex}}{\tilde{\sigma}^{2}_{\modelindex - 1} + \sigma^{2}_{\modelindex}}\)
+\end{itemize}
+
+Denoting \(f(\phi; \mu, \sigma^2)\) as the normal density function with
+mean \(\mu\) and variance \(\sigma^2\), we can now define
+
+\begin{itemize}
+\tightlist
+\item
+  \(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1}) = \frac{f(\phi; \mu_{\text{nu}}, \sigma^2_{\text{nu}})} {f(\phi; \mu_{\text{de}}, \sigma^2_{\text{de}})}\).
+\item
+  Implies
+  \(\eta_{\modelindex - 1} = \{\mu_{\text{nu}}, \sigma^{2}_{\text{nu}}, \mu_{\text{de}}, \sigma^{2}_{\text{de}}\}\)
+\end{itemize}
+
+\subsection{Potential issues}\label{potential-issues}
+
+\begin{itemize}
+\tightlist
+\item
+  Feasible in 1/2/(3?) dimensions, and melding cases where \(\Nm\) is
+  \(<10\)?.
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Trying to think of cases where it is easyish to figure out where the
+    overall posterior will be by visual inspection.
+  \item
+    More general idea for finding ``midpoint'' between samples from two
+    distributions.
+
+    \begin{itemize}
+    \tightlist
+    \item
+      Seems a lot like the idea of Barycentres in: (Srivastava et al.,
+      2015, 2018).
+    \item
+      Infact, I think this is identical in the 1-D case.
+    \item
+      In the 2-or-more-D case, we have to start thinking about
+      covariance as well.
+    \end{itemize}
+  \end{itemize}
+\item
+  Can use ESS as a diagnostic for particle degeneracy?
+\end{itemize}
+
+\section{Example - normal normal}\label{example---normal-normal}
+
+Starting from the same normal-normal model used to demonstrate the
+importance of accurately estimating the prior marginal distribution, we
+adjust some of the hyperparmeters to manufacture disjoint subposteriors.
+There are \(\Nm = 2\) models, with common parameter \(\phi\),
+\input{tex-input/norm-norm-ex/0010-norm-models.tex} We simulate 5
+observations from model 1, i.e.~\(Y_{1}\) is a vector of length 5, and 5
+observations from model 2. The observations variances
+\(\varepsilon_{1}^{2}\) and \(\varepsilon_{2}^{2}\) are fixed to 1 and 1
+respectively. The prior means \(\mu_{1}\) and \(\mu_{2}\) are -2 and 2,
+whilst the prior variances are 1 and 1. This configuration results in
+the subposterior distributions in Figure~\ref{fig:subposteriors}.
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\linewidth]{plots/norm-norm-ex/subposteriors} 
+
+}
+
+\caption{Disjoint subposteriors for the normal normal example.}\label{fig:subposteriors}
+\end{figure}
+
+The pooled prior is formed by linear pooling. For the mulit-stage
+samplers, the stage one target is defined in
+Equation~\eqref{eqn:stage-one-target}.
+
+\subsection{\texorpdfstring{Stage one target and
+\(\text{u}_{1}(\phi)\).}{Stage one target and \textbackslash{}text\{u\}\_\{1\}(\textbackslash{}phi).}}\label{stage-one-target-and-textu_1phi.}
+
+Here we choose \(\text{u}_{1}(\phi)\) via the method described in
+Section~\ref{choosing-tarw_modelindexphi-eta_modelindex}.
+Figure~\ref{fig:u_func_augmented_target} displays \(\text{u}_{1}(\phi)\)
+(right panel) and the augmented target
+\(\tilde{\pd}_{\text{meld}, 1}(\phi, \psi_{1}, Y_{1})\) (left panel).
+The augmented target now lies inbetween the two subposteriors depicted
+in Figure~\ref{fig:subposteriors}.
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\linewidth]{plots/norm-norm-ex/u-function-augmented-target} 
+
+}
+
+\caption{The augmented stage one target (left panel) and corresponding $\text{u}_{1}(\phi)$ (right panel).}\label{fig:u_func_augmented_target}
+\end{figure}
+
+\subsection{Numerical tests}\label{numerical-tests}
+
+We want to compare the melded posterior distribution sampled using the
+following methods:
+
+\begin{itemize}
+\tightlist
+\item
+  Multi-stage sampler, no augmentation function (normal melding).
+\item
+  Multi-stage sampler, \emph{with} augmentation function.
+\item
+  Directly sampling the melded posterior, as a point of reference.
+\end{itemize}
+
+We can analytically compute the melded posterior, however evaluating is
+numerically challenging. I have yet to find the calculations that
+introduce the numerical inaccuracy I observe.
+
+\paragraph{\texorpdfstring{Sequential MH, with no \(\text{u}_{1}(\phi)\)
+(normal
+melding)}{Sequential MH, with no \textbackslash{}text\{u\}\_\{1\}(\textbackslash{}phi) (normal melding)}}\label{sequential-mh-with-no-textu_1phi-normal-melding}
+
+Here we apply the multi-stage sampler with no augmentation function, or
+equivalently set \(\tarw_{1}(\phi; \eta_{1}) = 1\). The traceplots in
+Figure~\ref{fig:no_u_traces} demonstrate the issue with this approach,
+specifically that the support of the first stage does not intersect with
+the support of the melded posterior.
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\linewidth]{plots/norm-norm-ex/no-u/stage-traces} 
+
+}
+
+\caption{Traceplots for the first and second stage target distributions, with no subposterior augmentation.}\label{fig:no_u_traces}
+\end{figure}
+
+\paragraph{\texorpdfstring{Sequential MH, \emph{with}
+\(\text{u}_{1}(\phi)\) (idea developed
+here)}{Sequential MH, with \textbackslash{}text\{u\}\_\{1\}(\textbackslash{}phi) (idea developed here)}}\label{sequential-mh-with-textu_1phi-idea-developed-here}
+
+Now we sample the augmented target in the first stage, for use in the
+second and final stage. Figure~\ref{fig:with_u_traces_2} shows a clear
+improvement in performance over Figure~\ref{fig:no_u_traces}.
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\linewidth]{plots/norm-norm-ex/with-u-2/stage-traces} 
+
+}
+
+\caption{Traceplots for the fist and second stage targets distributions, \textit{with} augmented stage one target.}\label{fig:with_u_traces_2}
+\end{figure}
+
+\paragraph{\texorpdfstring{Joint MH - sampling
+\(\pmeld(\phi \mid Y_{1}, Y_{2})\)
+directly}{Joint MH - sampling \textbackslash{}pmeld(\textbackslash{}phi \textbackslash{}mid Y\_\{1\}, Y\_\{2\}) directly}}\label{joint-mh---sampling-pmeldphi-mid-y_1-y_2-directly}
+
+In this example we can specify the melded posterior in Stan directly.
+Figure~\ref{fig:joint_trace} is the traceplot of the sampler that
+directly targets the melded posterior.
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\linewidth]{plots/norm-norm-ex/joint/trace} 
+
+}
+
+\caption{Traceplot of the directly sampled melded posterior.}\label{fig:joint_trace}
+\end{figure}
+
+We compare the sample quantiles of the melded joint posterior and the
+stage two melded posterior obtained using the augmented stage one target
+in Figure~\ref{fig:joint_augmented_compare}, and we see good agreement
+between the two samples.
+
+\begin{figure}
+
+{\centering \includegraphics[width=1\linewidth]{plots/norm-norm-ex/joint-augmented-compare} 
+
+}
+
+\caption{Quantile-quantile plot of sample quantiles obtained by directly sampling the melded joint posterior (x-axis) and the stage two sample quantiles obtained using the augmented stage one target (y-axis).}\label{fig:joint_augmented_compare}
+\end{figure}
+
+\section{Computational costs}\label{computational-costs}
+
+\subsection{Multi-stage Metropolis-Hastings within
+Gibbs}\label{multi-stage-metropolis-hastings-within-gibbs}
+
+\subsubsection*{Two submodel case}\label{two-submodel-case}
+\addcontentsline{toc}{subsubsection}{Two submodel case}
+
+We would like to generate \(\Nx\) samples from the overall melded
+posterior, and hence opt to generate \(\Nx\) samples from the stage one
+target. Each stage one sample has a computational cost of order
+\(\mathcal{O}(C_{1})\) which involves evaluating the unnormalised
+logposterior (\(\mathcal{O}(C_{1, \text{lp}})\)), and generating and
+evaluating a proposal for the link parameter
+(\(\mathcal{O}(C_{1, \mathcal{Q}})\)). Note that
+\(\mathcal{O}(C_{1}) = \mathcal{O}(C_{1, \text{lp}} + C_{1, \mathcal{Q}})\).
+The analogous set of costs exist for the second stage target.
+
+First we have to identify that we have a problem:
+
+\begin{itemize}
+\tightlist
+\item
+  The cost of sampling the original stage one target:
+  \(\mathcal{O}(\Nx C_{1})\).
+\item
+  The cost of evaluating said samples in stage two:
+  \(\mathcal{O}(\Nx C_{2, \text{lp}})\).
+\end{itemize}
+
+Now we can solve it by:
+
+\begin{itemize}
+\tightlist
+\item
+  Sampling the second stage subposterior: \(\mathcal{O}(\Nx C_{2})\).
+
+  \begin{itemize}
+  \tightlist
+  \item
+    This does not include the pooled prior.
+  \end{itemize}
+\item
+  Sampling the augmented stage one target: \(\mathcal{O}(\Nx C_{1}')\).
+
+  \begin{itemize}
+  \tightlist
+  \item
+    The prime indicates that the augmented target has strictly greater
+    computational cost to evaluate.
+  \end{itemize}
+\item
+  Evaluating the augmented samples in stage two:
+  \(\mathcal{O}(\Nx C_{2, \text{lp}})\).
+\end{itemize}
+
+\subsubsection*{More than two submodels}\label{more-than-two-submodels}
+\addcontentsline{toc}{subsubsection}{More than two submodels}
+
+If we have \(\Nm > 2\) models, then the costs grow in the following way.
+
+Identifying the problem:
+
+\begin{itemize}
+\tightlist
+\item
+  We finish sampling the \(\modelindex-1\)th stage target:
+  \(\mathcal{O}(\Nx (C_{1} + C_{2, \text{lp}} + \ldots + C_{\modelindex - 1, \text{lp}}))\).
+\item
+  Then, we evaluate these samples under the \(\modelindex\)th stage:
+  \(\mathcal{O}(\Nx C_{\modelindex, \text{lp}})\) and realise we have
+  conflict.
+\end{itemize}
+
+Addressing the issue:
+
+\begin{itemize}
+\tightlist
+\item
+  Sampling all the subposteriors:
+  \(\mathcal{O}(\Nx (C_{1} + \ldots + C_{\Nm}))\)
+\item
+  Sampling the augmented stage one target \(\mathcal{O}(\Nx C_{1}')\).
+\item
+  Evaluating them under the augmented intermediary targets:
+  \(\mathcal{O}(\Nx (C_{2, \text{lp}}' + \ldots + C_{\Nm, \text{lp}}))\).
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Unless we augmented all the intermediary targets, any one stage
+    could render the sample degenerate.
+  \item
+    We do \textbf{not} augment the final target.
+  \end{itemize}
+\end{itemize}
+
+\subsection{Sequential Monte Carlo
+(SMC)}\label{sequential-monte-carlo-smc}
+
+Adopting an SMC approach alleviates the need for initial runs to both
+diagnose conflict, and calculate an appropriate augmentation function
+\(\tarw_{1}(\phi; \eta_{1})\). Consider the \(\Nm = 2\) models case
+initially. If introducing each submodel requires \(T\) tempering steps,
+each with a single refreshment step, and we wish to generate \(\Nx\)
+samples, the computational costs include:
+
+\begin{itemize}
+\tightlist
+\item
+  Sampling the stage one target: \(\mathcal{O}(\Nx C_{1})\).
+\item
+  Evaluating the \(T\) tempered likelihoods, and then refreshing the
+  particles: \(\mathcal{O}(\Nx T (C_{1} + C_{2}))\). 
+\item
+  The overall cost is then \(\mathcal{O}(\Nx T (2 C_{1} + C_{2}))\).
+\end{itemize}
+
+We can extrapolate this to \(\Nm > 2\) models. Assume introducing each
+additional submodel also requires \(T\) tempering steps. The final
+computational cost is then
+\(\mathcal{O}(\Nx T (\Nm C_{1} + (\Nm - 1) C_{2} + \ldots + C_{\Nm}))\).
+Perhaps there are ways to reduce the number of times we need to evaluate
+the previous models when introducing the \(\modelindex\)th model. A
+careful reading of (Lindsten et al., 2017) seems prudent, as the naive
+SMC algorithm I am envisaging here involves evaluating the joint model
+(i.e.~all the data).
+
+\section{Example - real world? Where can we get disjoint conflict
+from.}\label{example---real-world-where-can-we-get-disjoint-conflict-from.}
+
+\begin{itemize}
+\tightlist
+\item
+  Investigate the Carlin example Rob sent
+\end{itemize}
+
+\newpage
+
+\section*{Bibliography}\label{bibliography}
+\addcontentsline{toc}{section}{Bibliography}
+
+\hypertarget{refs}{}
+\hypertarget{ref-lindsten:etal:17}{}
+Lindsten, F., Johansen, A.M., Naesseth, C.A., Kirkpatrick, B., Schön,
+T.B., Aston, J.A.D., Bouchard-Côté, A., 2017. Divide-and-Conquer with
+Sequential Monte Carlo\emph{. Journal of Computational and Graphical
+Statistics} 26, 445--458.
+\url{https://doi.org/10.1080/10618600.2016.1237363}
+
+\hypertarget{ref-srivastava:etal:15}{}
+Srivastava, S., Cevher, V., Dinh, Q., Dunson, D., 2015. WASP: Scalable
+Bayes via barycenters of subset posteriors\emph{, in: Lebanon, G.,
+Vishwanathan, S.V.N. (Eds.), Proceedings of the Eighteenth International
+Conference on Artificial Intelligence and Statistics, Proceedings of
+Machine Learning Research}. PMLR, San Diego, California, USA, pp.
+912--920.
+
+\hypertarget{ref-srivastava:li:dunson:18}{}
+Srivastava, S., Li, C., Dunson, D.B., 2018. Scalable Bayes via
+Barycenter in Wasserstein Space\emph{. J. Mach. Learn. Res.} 19,
+312--346.
+
+\newpage
+
+\renewcommand{\thesection}{\Alph{section}}
+
+\setcounter{section}{0}
+
+\section{Appendix}\label{appendix}
+
+
+\end{document}

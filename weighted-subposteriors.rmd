@@ -15,6 +15,7 @@ output:
         tex-input/pre.tex
     fig_caption: true
     number_sections: true
+    keep_tex: true
 ---
 
 ```{r setup, include = FALSE}
@@ -59,33 +60,8 @@ For $\Nm > 2$, we will accrue an additional $\tarw_{\modelindex - 1}(\phi; \eta_
 
 ### Using summary statistics, assuming distribution is Normal
 
-<!-- _This is probably wrong in general, but will work for the Normal-Normal example
-later_.
-
-- is $\text{u}(x)$ the right symbol?
-    - the alphabetical successor was $\text{t}(x)$, but this looks like a t-distribution
-- What is the method here?
-    - Look at subposteriors
-    - Look at stage one samples
-    - do enough of the latter lie in the distributional product of the former? Can we formalise this?
-- What mathematical tools do we need to choose a $\text{u}(x)$ that isn't itself a distribution, what properties do we require?
-    - The idea here would be to choose something that widens the target (that isn't tempering)
-    - Really we want to map the target distribution to the maximum entropy distribution (uniform), which involves knowing the inverse mapping
-    - choose $\text{u}(x) = 1 \mathop{/} f(x; \mu, \sigma^2)^{\Nx - k}$, where k is some safety factor, and $f(x; \mu, \sigma^2)$ is the normal density.
-        - Choose $\mu = \overline{y}$?
-        - This deals with the narrowing, but doesn't address the translation
-        - $\text{u}(x) = f(x; \overline{y}_{2}, \hat{s}_{2}^2) \mathop{/} f(x; \overline{y}_{1}, \hat{s}_{1}^2)^{\Nx - k}$ can address both the narrowing
-        and the translation (sort of).
-            - what are the conditions for this to be sensible (heavy-ness of tails).
-            - This is nice because it only needs summary statistics, there is no point building a hugely complicated function that needs to look at all of the data?
-    - ~~Might as well choose $\text{u}(x) = x^{-(\Nx - k)}$?~~
-    - This is going to get overwhelmed with numerical error fairly quickly.
-    - Feels a lot like importance sampling, can we use the importance sampling results to justify approaches like this?
-        - PSIS paper has some good ideas about when IS works / fails
-    - What about the control variates idea used in subsampling MCMC, they use them to stabilise the variance of the log-posterior, but we could use them to inflate it? (I don't know about that). -->
-
-- An alternative may be to chose the parameters of the $\tarw_{\modelindex - 1}(\phi)$ using samples from $\pd_{\text{meld}, \modelindex - 1}(\phi \mid Y_{1})$ and $\pd_{\modelindex}(\phi \mid Y_{1})$.
-    - This has an additional cost, as we have to resample the resulting augmented version of $\pd_{\text{meld}, \modelindex - 1}$, as well as separately sample $\pd_{\modelindex}(\phi \mid Y_{1})$.
+<!-- - An alternative may be to chose the parameters of the $\tarw_{\modelindex - 1}(\phi)$ using samples from $\pd_{\text{meld}, \modelindex - 1}(\phi \mid Y_{1})$ and $\pd_{\modelindex}(\phi \mid Y_{1})$.
+    - This has an additional cost, as we have to resample the augmented version of $\pd_{\text{meld}, \modelindex - 1}$, in addition to separately sampling $\pd_{\modelindex}(\phi \mid Y_{1})$. -->
 
 Say we use the samples of $\phi$ from $\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1} \mid Y_{1}, \ldots, Y_{\modelindex - 1})$ as a proposal for $\pd_{\text{meld}, \modelindex}(\phi, \psi_{1}, \ldots, \psi_{\modelindex} \mid Y_{1}, \ldots, Y_{\modelindex})$ and observe the behaviour in Figure&nbsp;\ref{fig:no_u_traces}.
 We can still use these samples, in combination with samples from $\pd_{\modelindex}(\phi, \psi_{\modelindex} \mid Y_{\modelindex})$, to choose an appropriate $\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})$.
@@ -93,6 +69,9 @@ We can still use these samples, in combination with samples from $\pd_{\modelind
 Define: 
 
 - $\{\tilde{\phi}_{\sampleindex, \modelindex - 1}\}_{\sampleindex = 1, \ldots, \Nx}$ is a sample of size $\Nx$ from $\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1} \mid Y_{1}, \ldots, Y_{\modelindex - 1})$.
+    
+    - I am using the tilde to differentiate between samples from the intermediary targets and samples from individual subposteriors.
+
 - $\tilde{\mu}_{\modelindex - 1} = \frac{1}{\Nx}\sum\limits_{i = 1}^{\Nx}\tilde{\phi}_{\sampleindex, \modelindex - 1}$, the empirical mean of the $(\modelindex - 1)^{\text{th}}$ stage melded posterior.
 - $\tilde{\sigma}^{2}_{\modelindex - 1} = \frac{1}{\Nx - 1}\sum\limits_{i = 1}^{\Nx} (\tilde{\phi}_{\sampleindex, \modelindex - 1} - \tilde{\mu}_{\modelindex - 1})^{2}$,  the empirical variance of the $(\modelindex - 1)^{\text{th}}$ stage melded posterior.
 
@@ -105,6 +84,12 @@ Likewise,
 Next,
 
 - $k = 1.05$, some safety factor.
+    
+    - We need some safety factor to ensure the target is integrable.
+    - The integrability of the resulting target is a complicated function of the posterior and the space of possible $\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})$ functions.
+    - The tail behaviour is going to be important again.
+        - Seems to be a recurrent theme. 
+
 - $\mu_{\text{de}} = \tilde{\mu}_{\modelindex - 1}$
 - $\sigma^{2}_{\text{de}} = k \tilde{\sigma}^{2}_{\modelindex - 1}$
 - $\mu_{\text{nu}} = \frac{\tilde{\sigma}^{2}_{\modelindex - 1} \mu_{\modelindex} + \sigma^{2}_{\modelindex}\tilde{\mu}_{\modelindex - 1}} {\tilde{\sigma}^{2}_{\modelindex - 1} + \sigma^{2}_{\modelindex}}$
@@ -120,7 +105,9 @@ Denoting $f(\phi; \mu, \sigma^2)$ as the normal density function with mean $\mu$
 - Feasible in 1/2/(3?) dimensions, and melding cases where $\Nm$ is $<10$?. 
     - Trying to think of cases where it is easyish to figure out where the overall posterior will be by visual inspection.
     - More general idea for finding "midpoint" between samples from two distributions.
-        - Seems a lot like the idea of Barycentres in: https://arxiv.org/abs/1508.05880
+        - Seems a lot like the idea of Barycentres in: [@srivastava:etal:15; @srivastava:li:dunson:18].
+        - Infact, I think this is identical in the 1-D case.
+        - In the 2-or-more-D case, we have to start thinking about covariance as well. 
 - Can use ESS as a diagnostic for particle degeneracy?
  
 # Example - normal normal
@@ -138,65 +125,122 @@ This configuration results in the subposterior distributions in Figure&nbsp;\ref
 knitr::include_graphics("plots/norm-norm-ex/subposteriors.pdf")
 ```
 
+The pooled prior is formed by linear pooling. 
+For the mulit-stage samplers, the stage one target is defined in Equation&nbsp;\eqref{eqn:stage-one-target}.
+
 ## Stage one target and $\text{u}_{1}(\phi)$.
 
-- Choice is slightly weird
-- need to define some notation for the augmented target?
+Here we choose $\text{u}_{1}(\phi)$ via the method described in Section&nbsp;\ref{choosing-tarw_modelindexphi-eta_modelindex}. 
+Figure&nbsp;\ref{fig:u_func_augmented_target} displays $\text{u}_{1}(\phi)$ (right panel) and the augmented target $\tilde{\pd}_{\text{meld}, 1}(\phi, \psi_{1}, Y_{1})$ (left panel).
+The augmented target now lies inbetween the two subposteriors depicted in Figure&nbsp;\ref{fig:subposteriors}.
 
-```{r u_func_augmented_target, fig.cap ="$\\text{u}_{1}(\\phi)$ for various choices of $k$, and the resulting augmented target (log scale, unnormalised)."}
+```{r u_func_augmented_target, fig.cap ="The augmented stage one target (left panel) and corresponding $\\text{u}_{1}(\\phi)$ (right panel)."}
 knitr::include_graphics("plots/norm-norm-ex/u-function-augmented-target.pdf")
 ```
-
 
 ## Numerical tests
 
 We want to compare the melded posterior distribution sampled using the following methods:
 
-####  sequential MH, with no $\text{u}_{1}(\phi)$ (normal melding)
+- Multi-stage sampler, no augmentation function (normal melding).
+- Multi-stage sampler, _with_ augmentation function.
+- Directly sampling the melded posterior, as a point of reference.
 
-Figure&nbsp;\ref{fig:no_u_traces}.
+We can analytically compute the melded posterior, however evaluating is numerically challenging.
+I have yet to find the calculations that introduce the numerical inaccuracy I observe. 
 
-```{r no_u_traces, fig.cap = "$m$-stage traceplots, no subposterior weighting"}
+#### Sequential MH, with no $\text{u}_{1}(\phi)$ (normal melding)
+
+Here we apply the multi-stage sampler with no augmentation function, or equivalently set $\tarw_{1}(\phi; \eta_{1}) = 1$.
+The traceplots in Figure&nbsp;\ref{fig:no_u_traces} demonstrate the issue with this approach, specifically that the support of the first stage does not intersect with the support of the melded posterior.
+
+```{r no_u_traces, fig.cap = "Traceplots for the first and second stage target distributions, with no subposterior augmentation."}
 knitr::include_graphics("plots/norm-norm-ex/no-u/stage-traces.pdf")
 ```
 
+#### Sequential MH, _with_ $\text{u}_{1}(\phi)$ (idea developed here)
 
-####  sequential MH, _with_ $\text{u}_{1}(\phi)$ (Idea developed here)
+Now we sample the augmented target in the first stage, for use in the second and final stage.
+Figure&nbsp;\ref{fig:with_u_traces_2} shows a clear improvement in performance over Figure&nbsp;\ref{fig:no_u_traces}. 
 
-Figure&nbsp;\ref{fig:with_u_traces_2}.
-Using $\text{u}(x) = f(x; \overline{y}_{2}, \hat{s}_{2}^2) \mathop{/} f(x; \overline{y}_{1}, \hat{s}_{1}^2)^{\Nx - 3}$ for the moment.
-
-Not perfect, still thinking. Also don't think I've quite got the implementation & maths correct just yet.
-Need to think more about the _right_ weighting function, but current setup allows for easy experimentation.
-
-```{r with_u_traces_2, fig.cap = "$n$-stage traceplots, \\textit{with} subposterior weighting using statistics of $\\phi$, not the data."}
+```{r with_u_traces_2, fig.cap = "Traceplots for the fist and second stage targets distributions, \\textit{with} augmented stage one target."}
 knitr::include_graphics("plots/norm-norm-ex/with-u-2/stage-traces.pdf")
 ```
 
+####  Joint MH - sampling $\pmeld(\phi \mid Y_{1}, Y_{2})$ directly 
 
+In this example we can specify the melded posterior in Stan directly.
+Figure&nbsp;\ref{fig:joint_trace} is the traceplot of the sampler that directly targets the melded posterior.
 
-####  joint MH, i.e. sample $\pmeld(\phi \mid Y_{1}, Y_{2})$ all at once (it is possible here, and I'm interested in the results we get)
-
-Figure&nbsp;\ref{fig:joint_trace}
-
-```{r joint_trace, fig.cap = "trace of the melded posterior, sampled by MCMC directly."}
+```{r joint_trace, fig.cap = "Traceplot of the directly sampled melded posterior."}
 knitr::include_graphics("plots/norm-norm-ex/joint/trace.pdf")
 ```
 
-Comparing to Figure&nbsp;\ref{fig:with_u_traces_2} allows us to see we don't have the weighting function quite right yet, we have gone to far towards the second subposterior.
-
-We can compare the sample quantiles of the melded joint posterior and the stage two melded posterior obtained using the augmented stage one target.
+We compare the sample quantiles of the melded joint posterior and the stage two melded posterior obtained using the augmented stage one target in Figure&nbsp;\ref{fig:joint_augmented_compare}, and we see good agreement between the two samples.
 
 ```{r joint_augmented_compare, fig.cap = "Quantile-quantile plot of sample quantiles obtained by directly sampling the melded joint posterior (x-axis) and the stage two sample quantiles obtained using the augmented stage one target (y-axis)."}
 knitr::include_graphics("plots/norm-norm-ex/joint-augmented-compare.pdf")
 ```
 
+# Computational costs
 
-####  Analytical truth (I _think_ this is still easy enough to calculate with $\Nx = 5$).
+## Multi-stage Metropolis-Hastings within Gibbs
 
-TBA - need to do maths & implement this calculation for arbitrary number normal distributions / means.
+### Two submodel case {-}
 
-_Sun 7 Jul 15:47:26 2019_: I was very wrong about this. The algebra is slightly fiddly, but the numerics of this are just terrible. Have not yet figured out where I'm introducing the error.
+We would like to generate $\Nx$ samples from the overall melded posterior, and hence opt to generate $\Nx$ samples from the stage one target.
+Each stage one sample has a computational cost of order $\mathcal{O}(C_{1})$ which involves evaluating the unnormalised logposterior ($\mathcal{O}(C_{1, \text{lp}})$), and generating and evaluating a proposal for the link parameter ($\mathcal{O}(C_{1, \mathcal{Q}})$).
+Note that $\mathcal{O}(C_{1}) = \mathcal{O}(C_{1, \text{lp}} + C_{1, \mathcal{Q}})$.
+The analogous set of costs exist for the second stage target.
+
+First we have to identify that we have a problem:
+
+- The cost of sampling the original stage one target: $\mathcal{O}(\Nx C_{1})$.
+- The cost of evaluating said samples in stage two: $\mathcal{O}(\Nx C_{2, \text{lp}})$.
+
+Now we can solve it by:
+
+- Sampling the second stage subposterior: $\mathcal{O}(\Nx C_{2})$.
+    - This does not include the pooled prior.
+- Sampling the augmented stage one target: $\mathcal{O}(\Nx C_{1}')$.
+    - The prime indicates that the augmented target has strictly greater computational cost to evaluate.
+- Evaluating the augmented samples in stage two: $\mathcal{O}(\Nx C_{2, \text{lp}})$.
+
+### More than two submodels {-}
+
+If we have $\Nm > 2$ models, then the costs grow in the following way.
+
+Identifying the problem:
+
+- We finish sampling the $\modelindex-1$th stage target: $\mathcal{O}(\Nx (C_{1}  + C_{2, \text{lp}} + \ldots + C_{\modelindex - 1, \text{lp}}))$.
+- Then, we evaluate these samples under the $\modelindex$th stage: $\mathcal{O}(\Nx C_{\modelindex, \text{lp}})$ and realise we have conflict.
+
+Addressing the issue:
+
+- Sampling all the subposteriors: $\mathcal{O}(\Nx (C_{1} + \ldots + C_{\Nm}))$
+- Sampling the augmented stage one target $\mathcal{O}(\Nx C_{1}')$.
+- Evaluating them under the augmented intermediary targets: $\mathcal{O}(\Nx (C_{2, \text{lp}}' + \ldots + C_{\Nm, \text{lp}}))$.
+    - Unless we augmented all the intermediary targets, any one stage could render the sample degenerate.
+    - We do __not__ augment the final target.
+
+
+## Sequential Monte Carlo (SMC) 
+
+Adopting an SMC approach alleviates the need for initial runs to both diagnose conflict, and calculate an appropriate augmentation function $\tarw_{1}(\phi; \eta_{1})$.
+Consider the $\Nm = 2$ models case initially.
+If introducing each submodel requires $T$ tempering steps, each with a single refreshment step, and we wish to generate $\Nx$ samples, the computational costs include:
+
+- Sampling the stage one target: $\mathcal{O}(\Nx C_{1})$.
+- Evaluating the $T$ tempered likelihoods, and then refreshing the particles: $\mathcal{O}(\Nx T (C_{1} + C_{2}))$.
+    <!-- - Tempered likelihood strictly has a different cost, and the MCMC refreshment step needs to target something slightly augmented. -->
+- The overall cost is then $\mathcal{O}(\Nx T (2 C_{1} + C_{2}))$.
+
+We can extrapolate this to $\Nm > 2$ models.
+Assume introducing each additional submodel also requires $T$ tempering steps.
+The final computational cost is then $\mathcal{O}(\Nx T (\Nm C_{1} + (\Nm - 1) C_{2} + \ldots + C_{\Nm}))$.
+Perhaps there are ways to reduce the number of times we need to evaluate the previous models when introducing the $\modelindex$th model.
+A careful reading of [@lindsten:etal:17] seems prudent, as the naive SMC algorithm I am envisaging here involves evaluating the joint model (i.e. all the data).
+
 
 # Example - real world? Where can we get disjoint conflict from.
 

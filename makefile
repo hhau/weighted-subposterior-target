@@ -46,7 +46,7 @@ $(DATA_MODEL_TWO) : scripts/norm-norm-ex/02-model-two-data-gen.R $(SIM_PARS)
 plots/norm-norm-ex/subposteriors.pdf : scripts/norm-norm-ex/03-distribution-plotter.R $(DATA_MODEL_ONE) $(DATA_MODEL_TWO) $(SIM_PARS)
 	$(RSCRIPT) $<
 
-plots/norm-norm-ex/u-function-augmented-target.pdf	: plots/norm-norm-ex/subposteriors.pdf
+plots/norm-norm-ex/u-function-augmented-target.pdf	: plots/norm-norm-ex/subposteriors.pdf rds/norm-norm-ex/with-u-2/phi-samples-model-one.rds rds/norm-norm-ex/with-u-2/phi-samples-model-two.rds
 
 # no-u melding
 rds/norm-norm-ex/no-u/phi-samples-stage-one.rds : scripts/norm-norm-ex/no-u/stage-one-sampler.R $(SIM_PARS) $(DATA_MODEL_ONE) scripts/norm-norm-ex/stan-files/stage-one-target.stan

@@ -6,6 +6,9 @@ sim_pars <- readRDS("rds/norm-norm-ex/sim-pars.rds")
 stage_one_data <- readRDS("rds/norm-norm-ex/data-model-one.rds")
 stage_two_data <- readRDS("rds/norm-norm-ex/data-model-two.rds")
 
+model_one_samples <- readRDS("rds/norm-norm-ex/with-u-2/phi-samples-model-one.rds")
+model_two_samples <- readRDS("rds/norm-norm-ex/with-u-2/phi-samples-model-two.rds")
+
 # first the model one subposterior
 subposterior_one <- function(phi, log_scale = FALSE) {
   log_res <- sapply(phi, function(a_phi) {
@@ -109,21 +112,14 @@ p1 <- ggplot(p_df, aes(x = x)) +
     n = 501,
     mapping = aes(col = "ppost2")
   ) +
-  # stat_function(
-  #   fun = function(x) stage_one_target(x) / nc_target_one$value,
-  #   n = 501,
-  #   mapping = aes(col = "ptarget1")
-  # ) +
   scale_colour_manual(
     labels = parsed_map(c(
       "ppost1" = "'p'[1](phi~'|'~'Y'[1])",
-      "ppost2" = "'p'[2](phi~'|'~'Y'[2])"#,
-      # "ptarget1" = "'p'['meld, 1'](phi~'|'~'Y'[1])"
+      "ppost2" = "'p'[2](phi~'|'~'Y'[2])"
     )),
     values = c(
       "ppost1" = as.character(blues['mid']),
-      "ppost2" = greens[2]#,
-      # "ptarget1" = highlight_col
+      "ppost2" = greens[2]
     )
   ) +
   xlab(expression(phi)) +
@@ -140,18 +136,18 @@ ggsave_halfheight(
 
 # now - lets define a slightly weird u(x)
 u_1 <- function(phi, safe_fac = 3, log_scale = TRUE) {
-  N <- length(stage_one_data$y)
-  k <- safe_fac
-  mu_y_1 <- mean(stage_one_data$y)
-  var_y_1 <- var(stage_one_data$y)
-  mu_y_2 <- mean(stage_two_data$y)
-  var_y_2 <- var(stage_two_data$y)
+  # N <- length(stage_one_data$y)
+  # k <- safe_fac
+  mu_y_1 <- mean(model_one_samples)
+  var_y_1 <- var(model_one_samples)
+  mu_y_2 <- mean(model_two_samples)
+  var_y_2 <- var(model_two_samples)
   
   mu_u <- (var_y_1 * mu_y_2 + var_y_2 * mu_y_1) / (var_y_1 + var_y_2)
   var_u <- (var_y_1 * var_y_2) / (var_y_1 + var_y_2)
   
   log_res <- dnorm(phi, mean = mu_u, sd = sqrt(var_u), log = TRUE) -
-      (N - k) * dnorm(phi, mean = mu_y_1, sd = sqrt(var_y_1), log = TRUE)
+    dnorm(phi, mean = mu_y_1, sd = sqrt(var_y_1), log = TRUE)
   
   if (log_scale) {
     return(log_res)
@@ -171,7 +167,7 @@ augmented_target <- function(phi, safe_fac = 3, log_scale = FALSE) {
 
 }
 
-some_k <- 1:4
+some_k <- 1
 various_u <- do.call(c, lapply(some_k, function(a_k) {
   u_1(p_df$x, safe_fac = a_k, log_scale = T)
 }))
@@ -182,33 +178,37 @@ various_targets <- do.call(c, lapply(some_k, function(a_k) {
 new_df <- data.frame(
   x = p_df$x,
   y = various_u,
-  k = as.factor(rep(some_k, each = length(p_df$x))),
-  type = "u_function",
+  # k = as.factor(rep(some_k, each = length(p_df$x))),
+  type = "'u'[1](phi)",
   stringsAsFactors = FALSE
 )
 
 target_df <- data.frame(
   x = p_df$x,
   y = various_targets,
-  k = as.factor(rep(some_k, each = length(p_df$x))),
-  type = "augmented_target",
+  # k = as.factor(rep(some_k, each = length(p_df$x))),
+  type = "'p'['meld, m'-1](phi~'|'~'Y'[1])~'u'[1](phi)",
   stringsAsFactors = FALSE
 )
 
 combo_df <- rbind(new_df, target_df)
 
-u_p_aug_plot <- ggplot(combo_df, aes(x = x, y = y, col = k)) +
+u_p_aug_plot <- ggplot(combo_df, aes(x = x, y = exp(y))) +
   geom_line() +
   facet_wrap(
-    . ~ fct_rev(type),
-    scales = "free_y"
+    vars(type),
+    scales = "free_y",
+    labeller = label_parsed
   ) +
   ylab("") +
   xlab(expression(phi)) +
+  theme(
+    axis.text.y.left = element_blank()
+  )
   NULL
   
 ## TODO: Improve this plot once i'm convinced this idea has legs
-# u_p_aug_plot
+u_p_aug_plot
 
 ggsave_halfheight(
   file = "plots/norm-norm-ex/u-function-augmented-target.pdf",
