@@ -82,7 +82,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{23 July, 2019}
+    \date{29 July, 2019}
 
 \usepackage{amsmath}
 % I always seem to need tikz for something
@@ -321,6 +321,21 @@ mean \(\mu\) and variance \(\sigma^2\), we can now define
   \(\eta_{\modelindex - 1} = \{\mu_{\text{nu}}, \sigma^{2}_{\text{nu}}, \mu_{\text{de}}, \sigma^{2}_{\text{de}}\}\)
 \end{itemize}
 
+\subsection{\texorpdfstring{Similarities to the \emph{cavity
+distribution} of Vehtari et al.
+(2014)}{Similarities to the cavity distribution of Vehtari et al. (2014)}}\label{similarities-to-the-cavity-distribution-of-vehtarietal14}
+
+Our definition of
+\(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\) is very
+similar to the \emph{cavity distribution} of Vehtari et al. (2014). This
+suggests one may be able to address conflict between subposteriors in a
+similar way. Each submodel has its own
+\(\tarw_{\modelindex}(\phi; \eta_{\modelindex})\) that is initially
+proportional to a constant. After a certain number of parallel MCMC
+samples of the resulting target distributions, each
+\(\tarw_{\modelindex}(\phi; \eta_{\modelindex})\) is updated using the
+information from the samples of all the target distributions.
+
 \subsection{Potential issues}\label{potential-issues}
 
 \begin{itemize}
@@ -546,6 +561,9 @@ Now we can solve it by:
 \subsubsection*{More than two submodels}\label{more-than-two-submodels}
 \addcontentsline{toc}{subsubsection}{More than two submodels}
 
+Fri 26 Jul 13:16:49 2019: \emph{I don't think this is correct, consider
+three subposteriors in a triangle.}
+
 If we have \(\Nm > 2\) models, then the costs grow in the following way.
 
 Identifying the problem:
@@ -649,6 +667,12 @@ Machine Learning Research}. PMLR, San Diego, California, USA, pp.
 Srivastava, S., Li, C., Dunson, D.B., 2018. Scalable Bayes via
 Barycenter in Wasserstein Space\emph{. J. Mach. Learn. Res.} 19,
 312--346.
+
+\hypertarget{ref-vehtari:etal:14}{}
+Vehtari, A., Gelman, A., Sivula, T., Jylänki, P., Tran, D., Sahai, S.,
+Blomstedt, P., Cunningham, J.P., Schiminovich, D., Robert, C., 2014.
+Expectation Propagation as a Way of Life: A Framework for Bayesian
+Inference on Partitioned Data\emph{. arXiv e-prints} arXiv:1412.4869.
 
 \newpage
 
