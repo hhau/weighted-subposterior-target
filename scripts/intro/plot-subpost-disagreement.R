@@ -9,7 +9,7 @@ p1 <- ggplot(p_df, aes(x = x)) +
   stat_function(fun = dnorm, aes(col = "p1"), n = 501) +
   stat_function(fun = dnorm, args = list(mean = 6), aes(col = "p2"), n = 501) +
   stat_function(fun = dnorm, args = list(mean = 3, sd = 0.5), aes(col = "pmeld"), n = 501) +
-  stat_function(fun = dnorm, args = list(mean = 3, sd = 0.9), aes(col = "pz1_w1"), n = 501, lty = "dashed") +
+  stat_function(fun = dnorm, args = list(mean = 3, sd = 0.9), aes(col = "pz1_w1"), n = 501) +
   scale_colour_manual(
     labels = parsed_map(c(
       "p1" = "'p'[1](phi~'|'~'Y'[1])",
@@ -24,12 +24,12 @@ p1 <- ggplot(p_df, aes(x = x)) +
       "pz1_w1" = greens[2]
     )
   ) +
-  scale_linetype_manual(
+  scale_linetype_manual( # this does nothing
     values = c(
       "p1" = "solid",
       "p2" = "solid",
       "pmeld" = "solid",
-      "p1_w1" = "dashed"
+      "pz1_w1" = "dashed"
     )
   ) +
   labs(col = "Density") +

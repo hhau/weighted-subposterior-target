@@ -82,7 +82,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{29 July, 2019}
+    \date{05 August, 2019}
 
 \usepackage{amsmath}
 % I always seem to need tikz for something
@@ -222,9 +222,6 @@ additional model, which may be problematic.
 \subsection{\texorpdfstring{Choosing
 \(\tarw_{\modelindex}(\phi; \eta_{\modelindex})\)}{Choosing \textbackslash{}tarw\_\{\textbackslash{}modelindex\}(\textbackslash{}phi; \textbackslash{}eta\_\{\textbackslash{}modelindex\})}}\label{choosing-tarw_modelindexphi-eta_modelindex}
 
-\subsubsection{Using summary statistics, assuming distribution is
-Normal}\label{using-summary-statistics-assuming-distribution-is-normal}
-
 Say we use the samples of \(\phi\) from
 \(\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1} \mid Y_{1}, \ldots, Y_{\modelindex - 1})\)
 as a proposal for
@@ -235,91 +232,74 @@ use these samples, in combination with samples from
 choose an appropriate
 \(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\).
 
-Define:
+Consider a sample of size \(\Nx\) from intermediary melded target
+\(\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1} \mid Y_{1}, \ldots, Y_{\modelindex - 1})\)
+denoted
+\(\{\tilde{\phi}_{\sampleindex, \modelindex - 1}\}_{\sampleindex = 1}^{\Nx}\).
+Using this sample we can compute the sample mean of the
+\((\modelindex - 1)^{\text{th}}\) stage target
+\(\tilde{\mu}_{\modelindex - 1} = \frac{1}{\Nx}\sum\limits_{i = 1}^{\Nx}\tilde{\phi}_{\sampleindex, \modelindex - 1}\),
+as well as the sample variance
+\(\tilde{\sigma}^{2}_{\modelindex - 1} = \frac{1}{\Nx - 1}\sum\limits_{i = 1}^{\Nx} (\tilde{\phi}_{\sampleindex, \modelindex - 1} - \tilde{\mu}_{\modelindex - 1})^{2}\).
+Analogous quantities for the \(\modelindex^{\text{th}}\) subposterior
+can then be defined using the sample of size \(\Nx\) from the
+\(\modelindex^{\text{th}}\) subposterior
+\(\pd_{\modelindex}(\phi, \psi_{\modelindex} \mid Y_{\modelindex})\) as
+\(\{\phi_{\sampleindex, \modelindex}\}_{\sampleindex = 1}^{\Nx}\). The
+sample mean and variance of the subposterior,
+\(\hat{\mu}_{\modelindex}\) and \(\hat{\sigma}^{2}_{\modelindex}\), are
+computed in the same manner.
 
-\begin{itemize}
-\item
-  \(\{\tilde{\phi}_{\sampleindex, \modelindex - 1}\}_{\sampleindex = 1, \ldots, \Nx}\)
-  is a sample of size \(\Nx\) from
-  \(\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1} \mid Y_{1}, \ldots, Y_{\modelindex - 1})\).
+These sample statistics can then be used to define an appropriate
+augmentation function
+\(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\). We now have
+to assume that the intermediary target and subposterior distributions
+can be appropriately summarised by Gaussian distributions. Denoting the
+Gaussian density function with mean \(\mu\) and variance \(\sigma^2\) as
+\(f(\phi; \mu, \sigma^2)\), we define the augmentation function as a
+ratio of Gaussian densities
+\input{tex-input/method/0040-augmentation-definition.tex} whose
+parameters we will define momentarily. The intuition is that the
+denominator density should approximate the intermediary melded target
+\(\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1} \mid Y_{1}, \ldots, Y_{\modelindex - 1})\),
+whilst the numerator should approximate
+\(\pd_{\text{meld}, \modelindex}(\phi, \psi_{1}, \ldots, \psi_{\modelindex} \mid Y_{1}, \ldots, Y_{\modelindex})\),
+which is a combination of both the \((\modelindex - 1)^{\text{th}}\)
+stage target and the \(\modelindex^{\text{th}}\) subposterior.
 
-  \begin{itemize}
-  \tightlist
-  \item
-    I am using the tilde to differentiate between samples from the
-    intermediary targets and samples from individual subposteriors.
-  \end{itemize}
-\item
-  \(\tilde{\mu}_{\modelindex - 1} = \frac{1}{\Nx}\sum\limits_{i = 1}^{\Nx}\tilde{\phi}_{\sampleindex, \modelindex - 1}\),
-  the empirical mean of the \((\modelindex - 1)^{\text{th}}\) stage
-  melded posterior.
-\item
-  \(\tilde{\sigma}^{2}_{\modelindex - 1} = \frac{1}{\Nx - 1}\sum\limits_{i = 1}^{\Nx} (\tilde{\phi}_{\sampleindex, \modelindex - 1} - \tilde{\mu}_{\modelindex - 1})^{2}\),
-  the empirical variance of the \((\modelindex - 1)^{\text{th}}\) stage
-  melded posterior.
-\end{itemize}
+Using this intuition we define the parameters of the denominator density
+function to be \(\mu_{\text{de}} = \tilde{\mu}_{\modelindex - 1}\) and
+\(\sigma^{2}_{\text{de}} = \tilde{\sigma}^{2}_{\modelindex - 1}\). We
+can use the well known results about products of normal density
+functions, summarised in Bromiley (2003), to compute the numerator
+parameters \input{tex-input/method/0050-numerator-results.tex} and for
+compactness we define
+\(\eta_{\modelindex - 1} = \{\mu_{\text{nu}}, \sigma^{2}_{\text{nu}}, \mu_{\text{de}}, \sigma^{2}_{\text{de}}\}\).
 
-Likewise,
+In cases where all the densities of interest are Gaussian,
+\(f(\phi; \mu_{\text{de}}, \sigma^2_{\text{de}})\) can precisely
+summarise the typical stage one melding target
+\(\pd_{1}(\phi, \psi_{1}, Y_{1}) \mathop{/} \pd_{1}(\phi)\). This
+results in the augmented target being proportional to
+\(f(\phi; \mu_{\text{nu}}, \sigma^2_{\text{nu}})\), which we have
+defined to be a compromise between the two distributions of interest.
 
-\begin{itemize}
-\tightlist
-\item
-  \(\{\phi_{\sampleindex, \modelindex}\}_{\sampleindex = 1, \ldots, \Nx}\)
-  is a sample of size \(\Nx\) from
-  \(\pd_{\modelindex}(\phi, \psi_{\modelindex} \mid Y_{\modelindex})\).
-\item
-  \(\mu_{\modelindex} = \frac{1}{\Nx}\sum\limits_{i = 1}^{\Nx}\phi_{\sampleindex, \modelindex}\),
-  the empirical mean of the \(\modelindex^{\text{th}}\) subposterior.
-\item
-  \(\sigma^{2}_{\modelindex} = \frac{1}{\Nx - 1}\sum\limits_{i = 1}^{\Nx} (\phi_{\sampleindex, \modelindex} - \mu_{\modelindex})^{2}\),
-  the empirical variance of the \(\modelindex^{\text{th}}\)
-  subposterior.
-\end{itemize}
-
-Next,
-
-\begin{itemize}
-\item
-  \(k = 1.05\), some safety factor.
-
-  \begin{itemize}
-  \tightlist
-  \item
-    We need some safety factor to ensure the target is integrable.
-  \item
-    The integrability of the resulting target is a complicated function
-    of the posterior and the space of possible
-    \(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\) functions.
-  \item
-    The tail behaviour is going to be important again.
-
-    \begin{itemize}
-    \tightlist
-    \item
-      Seems to be a recurrent theme.
-    \end{itemize}
-  \end{itemize}
-\item
-  \(\mu_{\text{de}} = \tilde{\mu}_{\modelindex - 1}\)
-\item
-  \(\sigma^{2}_{\text{de}} = k \tilde{\sigma}^{2}_{\modelindex - 1}\)
-\item
-  \(\mu_{\text{nu}} = \frac{\tilde{\sigma}^{2}_{\modelindex - 1} \mu_{\modelindex} + \sigma^{2}_{\modelindex}\tilde{\mu}_{\modelindex - 1}} {\tilde{\sigma}^{2}_{\modelindex - 1} + \sigma^{2}_{\modelindex}}\)
-\item
-  \(\sigma^{2}_{\text{nu}} = \frac{\tilde{\sigma}^{2}_{\modelindex - 1} \sigma^{2}_{\modelindex}}{\tilde{\sigma}^{2}_{\modelindex - 1} + \sigma^{2}_{\modelindex}}\)
-\end{itemize}
-
-Denoting \(f(\phi; \mu, \sigma^2)\) as the normal density function with
-mean \(\mu\) and variance \(\sigma^2\), we can now define
-
-\begin{itemize}
-\tightlist
-\item
-  \(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1}) = \frac{f(\phi; \mu_{\text{nu}}, \sigma^2_{\text{nu}})} {f(\phi; \mu_{\text{de}}, \sigma^2_{\text{de}})}\).
-\item
-  Implies
-  \(\eta_{\modelindex - 1} = \{\mu_{\text{nu}}, \sigma^{2}_{\text{nu}}, \mu_{\text{de}}, \sigma^{2}_{\text{de}}\}\)
-\end{itemize}
+If \(\pd_{1}(\phi, \psi_{1}, Y_{1}) \mathop{/} \pd_{1}(\phi)\) has
+heavier tails than a Gaussian distribution, we may have concerns about
+the integrability of the target in
+Equation~\eqref{eqn:stage-one-target}. However, by construction
+\(\sigma_{\text{nu}}^{2} < \sigma_{\text{de}}^{2}\), which ensures that
+\(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\) is integrable.
+Given the original target
+\(\pd_{1}(\phi, \psi_{1}, Y_{1}) \mathop{/} \pd_{1}(\phi)\) is
+integrable, and the augmented target is the product of two integrable
+densities, the augmented target is also integrable. This gives the
+practitioner some room to tweak
+\(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\); as long as
+\(\sigma_{\text{nu}}^{2} < \sigma_{\text{de}}^{2}\) is satisfied, the
+target is integrable. Thus \(\sigma_{\text{nu}}^{2}\) can be
+artificially increased, to a known limit, to ameliorate the impact of
+any approximation error.
 
 \subsection{\texorpdfstring{Similarities to the \emph{cavity
 distribution} of Vehtari et al.
@@ -648,6 +628,10 @@ from.}\label{example---real-world-where-can-we-get-disjoint-conflict-from.}
 \addcontentsline{toc}{section}{Bibliography}
 
 \hypertarget{refs}{}
+\hypertarget{ref-bromiley:03}{}
+Bromiley, P., 2003. Products and Convolutions of Gaussian Probability
+Density Functions\emph{. Tina-Vision Memo} 3, 1.
+
 \hypertarget{ref-lindsten:etal:17}{}
 Lindsten, F., Johansen, A.M., Naesseth, C.A., Kirkpatrick, B., Schön,
 T.B., Aston, J.A.D., Bouchard-Côté, A., 2017. Divide-and-Conquer with
