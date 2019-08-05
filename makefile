@@ -24,6 +24,9 @@ SIM_PARS = rds/norm-norm-ex/sim-pars.rds
 DATA_MODEL_ONE = rds/norm-norm-ex/data-model-one.rds
 DATA_MODEL_TWO = rds/norm-norm-ex/data-model-two.rds
 
+# base things - do better at this in the future
+NORM_NORM_EX = scripts/norm-norm-ex
+NORM_STAN_FILES = $(NORM_NORM_EX)/stan-files
 
 all : $(WRITEUP)
 
@@ -49,54 +52,70 @@ plots/norm-norm-ex/subposteriors.pdf : scripts/norm-norm-ex/03-distribution-plot
 plots/norm-norm-ex/u-function-augmented-target.pdf	: plots/norm-norm-ex/subposteriors.pdf rds/norm-norm-ex/with-u-2/phi-samples-model-one.rds rds/norm-norm-ex/with-u-2/phi-samples-model-two.rds
 
 # no-u melding
-rds/norm-norm-ex/no-u/phi-samples-stage-one.rds : scripts/norm-norm-ex/no-u/stage-one-sampler.R $(SIM_PARS) $(DATA_MODEL_ONE) scripts/norm-norm-ex/stan-files/stage-one-target.stan
+RDS_NO_U = rds/norm-norm-ex/no-u
+PLOTS_NO_U = plots/norm-norm-ex/no-u
+SCRIPTS_NO_U = scripts/norm-norm-ex/no-u
+
+$(RDS_NO_U)/phi-samples-stage-one.rds : $(SCRIPTS_NO_U)/stage-one-sampler.R $(SIM_PARS) $(DATA_MODEL_ONE) $(NORM_STAN_FILES)/stage-one-target.stan
 	$(RSCRIPT) $<
 
-rds/norm-norm-ex/no-u/phi-samples-stage-two.rds : scripts/norm-norm-ex/no-u/stage-two-sampler.R rds/norm-norm-ex/no-u/phi-samples-stage-one.rds $(SIM_PARS) $(DATA_MODEL_TWO)
+$(RDS_NO_U)/phi-samples-stage-two.rds : $(SCRIPTS_NO_U)/stage-two-sampler.R $(RDS_NO_U)/phi-samples-stage-one.rds $(SIM_PARS) $(DATA_MODEL_TWO)
 	$(RSCRIPT) $<
 
-plots/norm-norm-ex/no-u/stage-traces.pdf : scripts/norm-norm-ex/no-u/plotter.R $(PLOT_SETTINGS) rds/norm-norm-ex/no-u/phi-samples-stage-one.rds rds/norm-norm-ex/no-u/phi-samples-stage-two.rds
+$(PLOTS_NO_U)/stage-traces.pdf : $(SCRIPTS_NO_U)/plotter.R $(PLOT_SETTINGS) $(RDS_NO_U)/phi-samples-stage-one.rds $(RDS_NO_U)/phi-samples-stage-two.rds
 	$(RSCRIPT) $<
 
 # with-u melding
-rds/norm-norm-ex/with-u/u-func-args.rds : scripts/norm-norm-ex/with-u/u-func-args.R $(DATA_MODEL_ONE) $(DATA_MODEL_TWO)
+RDS_WITH_U = rds/norm-norm-ex/with-u
+PLOTS_WITH_U = plots/norm-norm-ex/with-u
+SCRIPTS_WITH_U = scripts/norm-norm-ex/with-u
+
+$(RDS_WITH_U)/u-func-args.rds : $(SCRIPTS_WITH_U)/u-func-args.R $(DATA_MODEL_ONE) $(DATA_MODEL_TWO)
 	$(RSCRIPT) $<
 
-rds/norm-norm-ex/with-u/phi-samples-stage-one.rds : scripts/norm-norm-ex/with-u/stage-one-sampler.R $(SIM_PARS) $(DATA_MODEL_ONE) rds/norm-norm-ex/with-u/u-func-args.rds scripts/norm-norm-ex/stan-files/augmented-stage-one-target.stan
+$(RDS_WITH_U)/phi-samples-stage-one.rds : $(SCRIPTS_WITH_U)/stage-one-sampler.R $(SIM_PARS) $(DATA_MODEL_ONE) $(RDS_WITH_U)/u-func-args.rds $(NORM_STAN_FILES)/augmented-stage-one-target.stan
 	$(RSCRIPT) $<
 
-rds/norm-norm-ex/with-u/phi-samples-stage-two.rds : scripts/norm-norm-ex/with-u/stage-two-sampler.R $(SIM_PARS) $(DATA_MODEL_TWO) rds/norm-norm-ex/with-u/u-func-args.rds rds/norm-norm-ex/with-u/phi-samples-stage-one.rds
+$(RDS_WITH_U)/phi-samples-stage-two.rds : $(SCRIPTS_WITH_U)/stage-two-sampler.R $(SIM_PARS) $(DATA_MODEL_TWO) $(RDS_WITH_U)/u-func-args.rds $(RDS_WITH_U)/phi-samples-stage-one.rds
 	$(RSCRIPT) $<
 
-plots/norm-norm-ex/with-u/stage-traces.pdf : scripts/norm-norm-ex/with-u/plotter.R rds/norm-norm-ex/with-u/phi-samples-stage-one.rds rds/norm-norm-ex/with-u/phi-samples-stage-two.rds
+$(PLOTS_WITH_U)/stage-traces.pdf : $(SCRIPTS_WITH_U)/plotter.R $(RDS_WITH_U)/phi-samples-stage-one.rds $(RDS_WITH_U)/phi-samples-stage-two.rds
 	$(RSCRIPT) $<
 
 # direct sampling of the joint
-rds/norm-norm-ex/joint/phi-samples-joint.rds : scripts/norm-norm-ex/joint/joint-sampler.R $(SIM_PARS) $(DATA_MODEL_ONE) $(DATA_MODEL_TWO) scripts/norm-norm-ex/stan-files/melded-posterior.stan
+RDS_JOINT = rds/norm-norm-ex/joint
+PLOTS_JOINT = plots/norm-norm-ex/joint
+SCRIPTS_JOINT = scripts/norm-norm-ex/joint
+
+$(RDS_JOINT)/phi-samples-joint.rds : $(SCRIPTS_JOINT)/joint-sampler.R $(SIM_PARS) $(DATA_MODEL_ONE) $(DATA_MODEL_TWO) $(NORM_STAN_FILES)/melded-posterior.stan
 	$(RSCRIPT) $<
 
-plots/norm-norm-ex/joint/trace.pdf : scripts/norm-norm-ex/joint/plotter.R rds/norm-norm-ex/joint/phi-samples-joint.rds
+$(PLOTS_JOINT)/trace.pdf : $(SCRIPTS_JOINT)/plotter.R $(RDS_JOINT)/phi-samples-joint.rds
 	$(RSCRIPT) $<
 
 # compare the joint at the augmented
-plots/norm-norm-ex/joint-augmented-compare.pdf : scripts/norm-norm-ex/04-compare-with-u-and-joint.R $(PLOT_SETTINGS) rds/norm-norm-ex/joint/phi-samples-joint.rds rds/norm-norm-ex/with-u/phi-samples-stage-two.rds
+plots/norm-norm-ex/joint-augmented-compare.pdf : scripts/norm-norm-ex/04-compare-with-u-and-joint.R $(PLOT_SETTINGS) $(RDS_JOINT)/phi-samples-joint.rds rds/norm-norm-ex/with-u-2/phi-samples-stage-two.rds
 	$(RSCRIPT) $<
 
 # with-u-2
-rds/norm-norm-ex/with-u-2/phi-samples-model-one.rds : scripts/norm-norm-ex/with-u-2/model-one-sampler.R $(SIM_PARS) $(DATA_MODEL_ONE) scripts/norm-norm-ex/stan-files/stage-one-target.stan
+RDS_WITH_U_2 = rds/norm-norm-ex/with-u-2
+PLOTS_WITH_U_2 = plots/norm-norm-ex/with-u-2
+SCRIPTS_WITH_U_2 = scripts/norm-norm-ex/with-u-2
+
+$(RDS_WITH_U_2)/phi-samples-model-one.rds : $(SCRIPTS_WITH_U_2)/model-one-sampler.R $(SIM_PARS) $(DATA_MODEL_ONE) $(NORM_STAN_FILES)/stage-one-target.stan
 	$(RSCRIPT) $<
 
-rds/norm-norm-ex/with-u-2/phi-samples-model-two.rds : scripts/norm-norm-ex/with-u-2/model-two-sampler.R $(SIM_PARS) $(DATA_MODEL_TWO) scripts/norm-norm-ex/stan-files/stage-one-target.stan
+$(RDS_WITH_U_2)/phi-samples-model-two.rds : $(SCRIPTS_WITH_U_2)/model-two-sampler.R $(SIM_PARS) $(DATA_MODEL_TWO) $(NORM_STAN_FILES)/stage-one-target.stan
 	$(RSCRIPT) $<
 
-rds/norm-norm-ex/with-u-2/u-func-args.rds : scripts/norm-norm-ex/with-u-2/u-function-args.R rds/norm-norm-ex/with-u-2/phi-samples-model-one.rds rds/norm-norm-ex/with-u-2/phi-samples-model-two.rds
+$(RDS_WITH_U_2)/u-func-args.rds : $(SCRIPTS_WITH_U_2)/u-function-args.R $(RDS_WITH_U_2)/phi-samples-model-one.rds $(RDS_WITH_U_2)/phi-samples-model-two.rds
 	$(RSCRIPT) $<
 
-rds/norm-norm-ex/with-u-2/phi-samples-stage-one.rds : scripts/norm-norm-ex/with-u-2/augmented-stage-one-sampler.R $(SIM_PARS) $(DATA_MODEL_ONE) rds/norm-norm-ex/with-u-2/u-func-args.rds scripts/norm-norm-ex/stan-files/augmented-stage-one-target-two.stan
+$(RDS_WITH_U_2)/phi-samples-stage-one.rds : $(SCRIPTS_WITH_U_2)/augmented-stage-one-sampler.R $(SIM_PARS) $(DATA_MODEL_ONE) $(RDS_WITH_U_2)/u-func-args.rds $(NORM_STAN_FILES)/augmented-stage-one-target-two.stan
 	$(RSCRIPT) $<
 
-rds/norm-norm-ex/with-u-2/phi-samples-stage-two.rds : scripts/norm-norm-ex/with-u-2/stage-two-sampler.R $(SIM_PARS) $(DATA_MODEL_TWO) rds/norm-norm-ex/with-u-2/u-func-args.rds rds/norm-norm-ex/with-u-2/phi-samples-stage-one.rds
+$(RDS_WITH_U_2)/phi-samples-stage-two.rds : $(SCRIPTS_WITH_U_2)/stage-two-sampler.R $(SIM_PARS) $(DATA_MODEL_TWO) $(RDS_WITH_U_2)/u-func-args.rds $(RDS_WITH_U_2)/phi-samples-stage-one.rds
 	$(RSCRIPT) $<
 
-plots/norm-norm-ex/with-u-2/stage-traces.pdf : scripts/norm-norm-ex/with-u-2/plotter.R $(PLOT_SETTINGS) rds/norm-norm-ex/with-u-2/phi-samples-stage-one.rds rds/norm-norm-ex/with-u-2/phi-samples-stage-two.rds
+$(PLOTS_WITH_U_2)/stage-traces.pdf : $(SCRIPTS_WITH_U_2)/plotter.R $(PLOT_SETTINGS) $(RDS_WITH_U_2)/phi-samples-stage-one.rds $(RDS_WITH_U_2)/phi-samples-stage-two.rds
 	$(RSCRIPT) $<

@@ -12,7 +12,8 @@ mu_de <- mu_1
 var_de <- var_1 * safe_fac
 
 mu_nu <- (mu_1 * var_2 + mu_2 * var_1) / (var_1 + var_2)
-var_nu <- ((var_1 * var_2) / (var_1 + var_2)) * 1.7
+# can artificially widen the following up to var_de
+var_nu <- ((var_1 * var_2) / (var_1 + var_2)) * 1   
 
 u_func_args <- list(
   mu_de = mu_de,

@@ -15,11 +15,11 @@ plot_tbl <- tibble(
   with_u_stage_2_quantiles = with_u_stage_2_quantiles  
 )
 
-p1 <- ggplot(plot_tbl, aes(x = joint_quantiles, y = with_u_stage_2_quantiles)) +
-  geom_point() +
-  geom_abline(slope = 1, intercept = 0) +
-  xlab("Joint quantiles") +
-  ylab("Augmented stage 1 target quantiles")
+p1 <- ggplot(plot_tbl, aes(y = joint_quantiles, x = with_u_stage_2_quantiles)) +
+  geom_point(alpha = 0.7) +
+  geom_abline(slope = 1, intercept = 0, lty = "dashed", col = "grey") +
+  ylab("Joint quantiles") +
+  xlab("Melded posterior using augmented stage 1 target quantiles")
 
 ggsave_halfheight(
   filename = "plots/norm-norm-ex/joint-augmented-compare.pdf",

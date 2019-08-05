@@ -74,12 +74,12 @@ whose parameters we will define momentarily.
 The intuition is that the denominator density should approximate the intermediary melded target $\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1} \mid Y_{1}, \ldots, Y_{\modelindex - 1})$, whilst the numerator should approximate $\pd_{\text{meld}, \modelindex}(\phi, \psi_{1}, \ldots, \psi_{\modelindex} \mid Y_{1}, \ldots, Y_{\modelindex})$, which is a combination of both the $(\modelindex - 1)^{\text{th}}$ stage target and the $\modelindex^{\text{th}}$ subposterior.
 
 Using this intuition we define the parameters of the denominator density function to be $\mu_{\text{de}} = \tilde{\mu}_{\modelindex - 1}$ and $\sigma^{2}_{\text{de}} = \tilde{\sigma}^{2}_{\modelindex - 1}$. 
-We can use the well known results about products of normal density functions, summarised in @bromiley:03, to compute the numerator parameters
+We can use the well known results about products of Gaussian density functions, summarised in @bromiley:03, to compute the numerator parameters
 \input{tex-input/method/0050-numerator-results.tex}
 and for compactness we define $\eta_{\modelindex - 1} = \{\mu_{\text{nu}}, \sigma^{2}_{\text{nu}}, \mu_{\text{de}}, \sigma^{2}_{\text{de}}\}$.
 
-In cases where all the densities of interest are Gaussian, $f(\phi; \mu_{\text{de}}, \sigma^2_{\text{de}})$ can precisely summarise the typical stage one melding target $\pd_{1}(\phi, \psi_{1}, Y_{1}) \mathop{/} \pd_{1}(\phi)$. 
-This results in the augmented target being proportional to $f(\phi; \mu_{\text{nu}}, \sigma^2_{\text{nu}})$, which we have defined to be a compromise between the two distributions of interest.
+In cases where all densities of interest are Gaussian, $f(\phi; \mu_{\text{de}}, \sigma^2_{\text{de}})$ precisely summarises the typical stage one melding target $\pd_{1}(\phi, \psi_{1}, Y_{1}) \mathop{/} \pd_{1}(\phi)$. 
+This results in an augmented target proportional to $f(\phi; \mu_{\text{nu}}, \sigma^2_{\text{nu}})$, which we have defined as a composition of the two distributions of interest.
 
 If $\pd_{1}(\phi, \psi_{1}, Y_{1}) \mathop{/} \pd_{1}(\phi)$ has heavier tails than a Gaussian distribution, we may have concerns about the integrability of the target in Equation&nbsp;\eqref{eqn:stage-one-target}.
 However, by construction $\sigma_{\text{nu}}^{2} < \sigma_{\text{de}}^{2}$, which ensures that $\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})$ is integrable.
@@ -87,12 +87,46 @@ Given the original target $\pd_{1}(\phi, \psi_{1}, Y_{1}) \mathop{/} \pd_{1}(\ph
 This gives the practitioner some room to tweak $\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})$; as long as $\sigma_{\text{nu}}^{2} < \sigma_{\text{de}}^{2}$ is satisfied, the target is integrable.
 Thus $\sigma_{\text{nu}}^{2}$ can be artificially increased, to a known limit, to ameliorate the impact of any approximation error. 
 
-## Similarities to the _cavity distribution_ of @vehtari:etal:14
+## Similarities to @vehtari:etal:14
 
-Our definition of $\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})$ is very similar to the _cavity distribution_ of @vehtari:etal:14.
-This suggests one may be able to address conflict between subposteriors in a similar way. 
-Each submodel has its own $\tarw_{\modelindex}(\phi; \eta_{\modelindex})$ that is initially proportional to a constant.
-After a certain number of parallel MCMC samples of the resulting target distributions, each $\tarw_{\modelindex}(\phi; \eta_{\modelindex})$ is updated using the information from the samples of all the target distributions.
+Expectation propagation (EP) is interested in approximating a target density $f(\phi)$, typically a posterior distribution, with a density $g(\phi; \eta)$ from a known parametric family, with parameter $\eta$.
+Both densities are assumed to factorise multiplicatively
+\input{tex-input/expectation-propagation/0010-factorisations-ep.tex}
+It is assumed that each component of the factorisation of $f(\phi)$ has an equivalent component in $g(\phi; \eta)$.
+Each component of the factorisations is referred to as a _site_, and the overall approximation $g(\phi; \eta)$ is the _global_ approximation.
+@vehtari:etal:14 then define the _cavity distribution_ $g_{-\modelindex}(\phi; \eta)$ and the _tilted distribution_ $g_{\setminus\modelindex}(\phi; \eta)$
+\input{tex-input/expectation-propagation/0020-ep-distribution-defs.tex}
+
+Assume we have some initial value for $\eta$ in $g(\phi; \eta)$, which is an initial approximation to the target density.
+For each site $\modelindex$, EP proceeds to
+
+1. Compute the cavity distribution $g_{-\modelindex}(\phi; \eta)$, which is an algebraic calculation for each site as $g$ is a member of the exponential family.
+1. Improve the site approximation $g_{\modelindex}(\phi; \eta_{\modelindex})$ by optimising $\eta_{\modelindex}$ with respect to a divergence metric, typically the Kullback-Leibler (KL) divergence between $f_{\modelindex}(\phi) g_{-\modelindex}(\phi; \eta)$ and $g_{\modelindex}(\phi; \eta_{\modelindex}) g_{-\modelindex}(\phi; \eta)$.
+
+These two steps can be performed in batch-parallel, where each $\eta_{\modelindex}$ is optimised in parallel then communicated back to a central node.
+The central node computes $\eta$, then broadcasts the result back to each parallel node for more optimisation steps, which is repeated until some convergence criteria is reached. @vehtari:etal:14 state that optimising $\eta_{\modelindex}$ is the critical operation in EP, and that minimising the KL divergence corresponds to matching the moments of $f_{\modelindex}(\phi) g_{-\modelindex}(\phi; \eta)$ and $g_{\modelindex}(\phi; \eta_{\modelindex}) g_{-\modelindex}(\phi; \eta)$.
+
+### Analogies in Markov melding
+
+Consider the melded posterior
+\input{tex-input/expectation-propagation/0030-melding-factorisation.tex}
+noting that the product terms now start at $\modelindex = 1$.
+Our definition of $\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})$ is  analogous to the cavity distribution $g_{-\modelindex}(\phi; \eta)$ of @vehtari:etal:14.
+The denominator density $f(\phi; \mu_{\text{de}}, \sigma^{2}_{\text{de}})$ in Equation&nbsp;\eqref{eqn:augmentation-definition} is an approximation to $\pd_{\modelindex}(\psi_{\modelindex} \mid Y_{\modelindex}, \phi)$ in precisely the way EP suggests approximating[^notation] $f_{\modelindex}(\phi)$ with $g_{\modelindex}(\phi; \eta_{\modelindex})$.
+Likewise, the numerator density in Equation&nbsp;\eqref{eqn:augmentation-definition} is acting as the equivalent _global_ approximation $g(\phi; \eta)$ in EP.
+There is a slight difference due to the pooled prior, which we do not[^pooledprior] factor into the computation of $\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})$.
+
+[^notation]: This notation clashes, I should fix that.
+[^pooledprior]: Suggesting I'm not doing something right - would be worth factoring in?. I guess I've just been ignoring the impact of the pooled prior.
+
+This suggests another strategy to address conflict when melding:
+
+- Each (intermediary target / conditional) (and the pooled prior) has its own $\tarw_{\modelindex}(\phi; \eta_{\modelindex})$ that is initially proportional to a constant.
+- After a certain number of parallel MCMC samples of the resulting target distributions, each $\tarw_{\modelindex}(\phi; \eta_{\modelindex})$ is updated using the information from the samples of all the target distributions.
+- Iterate until there is agreement (divergence metric based on samples? KS test?)
+    - KS probably way too sensitive, think of others.
+    - What was the combination hypotheses idea Rajen was talking about? Useful here?
+    - Convergence properties almost certainly unprovable
 
 ## Potential issues
 
@@ -172,7 +206,7 @@ knitr::include_graphics("plots/norm-norm-ex/joint/trace.pdf")
 
 We compare the sample quantiles of the melded joint posterior and the stage two melded posterior obtained using the augmented stage one target in Figure&nbsp;\ref{fig:joint_augmented_compare}, and we see good agreement between the two samples.
 
-```{r joint_augmented_compare, fig.cap = "Quantile-quantile plot of sample quantiles obtained by directly sampling the melded joint posterior (x-axis) and the stage two sample quantiles obtained using the augmented stage one target (y-axis)."}
+```{r joint_augmented_compare, fig.cap = "Quantile-quantile plot of sample quantiles obtained by directly sampling the melded joint posterior (y-axis) and the stage two sample quantiles obtained using the augmented stage one target (x-axis)."}
 knitr::include_graphics("plots/norm-norm-ex/joint-augmented-compare.pdf")
 ```
 
@@ -186,7 +220,7 @@ knitr::include_graphics("plots/norm-norm-ex/joint-augmented-compare.pdf")
 We would like to generate $\Nx$ samples from the overall melded posterior, and hence opt to generate $\Nx$ samples from the stage one target.
 Each stage one sample has a computational cost of order $\mathcal{O}(C_{1})$ which involves evaluating the unnormalised logposterior ($\mathcal{O}(C_{1, \text{lp}})$), and generating and evaluating a proposal for the link parameter ($\mathcal{O}(C_{1, \mathcal{Q}})$).
 Note that $\mathcal{O}(C_{1}) = \mathcal{O}(C_{1, \text{lp}} + C_{1, \mathcal{Q}})$.
-The analogous set of costs exist for the second stage target.
+The equivalent set of costs exist for the second stage target.
 
 First we have to identify that we have a problem:
 

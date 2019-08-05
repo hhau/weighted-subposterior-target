@@ -1,0 +1,14 @@
+\begin{align}
+  \pd_{\text{meld}}(\phi, \psi_{1}, \ldots, \psi_{\Nm} \mid Y_{1}, \ldots,  Y_{\Nm}) \propto
+    \ppoolphi
+    \prod_{\modelindex = 1}^{\Nm}
+    \pd_{\modelindex}(\psi_{\modelindex} \mid Y_{\modelindex}, \phi) \\
+    \ppoolphi
+    \prod_{\modelindex = 1}^{\Nm}
+    \frac {
+      \pd_{\modelindex}(\phi, \psi_{\modelindex}, Y_{\modelindex})
+    } {
+      \pd_{\modelindex}(\phi)
+    },
+  \label{eqn:melding-factorisation}
+\end{align}

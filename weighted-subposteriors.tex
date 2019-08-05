@@ -270,19 +270,19 @@ stage target and the \(\modelindex^{\text{th}}\) subposterior.
 Using this intuition we define the parameters of the denominator density
 function to be \(\mu_{\text{de}} = \tilde{\mu}_{\modelindex - 1}\) and
 \(\sigma^{2}_{\text{de}} = \tilde{\sigma}^{2}_{\modelindex - 1}\). We
-can use the well known results about products of normal density
+can use the well known results about products of Gaussian density
 functions, summarised in Bromiley (2003), to compute the numerator
 parameters \input{tex-input/method/0050-numerator-results.tex} and for
 compactness we define
 \(\eta_{\modelindex - 1} = \{\mu_{\text{nu}}, \sigma^{2}_{\text{nu}}, \mu_{\text{de}}, \sigma^{2}_{\text{de}}\}\).
 
-In cases where all the densities of interest are Gaussian,
-\(f(\phi; \mu_{\text{de}}, \sigma^2_{\text{de}})\) can precisely
-summarise the typical stage one melding target
+In cases where all densities of interest are Gaussian,
+\(f(\phi; \mu_{\text{de}}, \sigma^2_{\text{de}})\) precisely summarises
+the typical stage one melding target
 \(\pd_{1}(\phi, \psi_{1}, Y_{1}) \mathop{/} \pd_{1}(\phi)\). This
-results in the augmented target being proportional to
+results in an augmented target proportional to
 \(f(\phi; \mu_{\text{nu}}, \sigma^2_{\text{nu}})\), which we have
-defined to be a compromise between the two distributions of interest.
+defined as a composition of the two distributions of interest.
 
 If \(\pd_{1}(\phi, \psi_{1}, Y_{1}) \mathop{/} \pd_{1}(\phi)\) has
 heavier tails than a Gaussian distribution, we may have concerns about
@@ -301,20 +301,105 @@ target is integrable. Thus \(\sigma_{\text{nu}}^{2}\) can be
 artificially increased, to a known limit, to ameliorate the impact of
 any approximation error.
 
-\subsection{\texorpdfstring{Similarities to the \emph{cavity
-distribution} of Vehtari et al.
-(2014)}{Similarities to the cavity distribution of Vehtari et al. (2014)}}\label{similarities-to-the-cavity-distribution-of-vehtarietal14}
+\subsection{Similarities to Vehtari et al.
+(2014)}\label{similarities-to-vehtarietal14}
 
-Our definition of
-\(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\) is very
-similar to the \emph{cavity distribution} of Vehtari et al. (2014). This
-suggests one may be able to address conflict between subposteriors in a
-similar way. Each submodel has its own
-\(\tarw_{\modelindex}(\phi; \eta_{\modelindex})\) that is initially
-proportional to a constant. After a certain number of parallel MCMC
-samples of the resulting target distributions, each
-\(\tarw_{\modelindex}(\phi; \eta_{\modelindex})\) is updated using the
-information from the samples of all the target distributions.
+Expectation propagation (EP) is interested in approximating a target
+density \(f(\phi)\), typically a posterior distribution, with a density
+\(g(\phi; \eta)\) from a known parametric family, with parameter
+\(\eta\). Both densities are assumed to factorise multiplicatively
+\input{tex-input/expectation-propagation/0010-factorisations-ep.tex} It
+is assumed that each component of the factorisation of \(f(\phi)\) has
+an equivalent component in \(g(\phi; \eta)\). Each component of the
+factorisations is referred to as a \emph{site}, and the overall
+approximation \(g(\phi; \eta)\) is the \emph{global} approximation.
+Vehtari et al. (2014) then define the \emph{cavity distribution}
+\(g_{-\modelindex}(\phi; \eta)\) and the \emph{tilted distribution}
+\(g_{\setminus\modelindex}(\phi; \eta)\)
+\input{tex-input/expectation-propagation/0020-ep-distribution-defs.tex}
+
+Assume we have some initial value for \(\eta\) in \(g(\phi; \eta)\),
+which is an initial approximation to the target density. For each site
+\(\modelindex\), EP proceeds to
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Compute the cavity distribution \(g_{-\modelindex}(\phi; \eta)\),
+  which is an algebraic calculation for each site as \(g\) is a member
+  of the exponential family.
+\item
+  Improve the site approximation
+  \(g_{\modelindex}(\phi; \eta_{\modelindex})\) by optimising
+  \(\eta_{\modelindex}\) with respect to a divergence metric, typically
+  the Kullback-Leibler (KL) divergence between
+  \(f_{\modelindex}(\phi) g_{-\modelindex}(\phi; \eta)\) and
+  \(g_{\modelindex}(\phi; \eta_{\modelindex}) g_{-\modelindex}(\phi; \eta)\).
+\end{enumerate}
+
+These two steps can be performed in batch-parallel, where each
+\(\eta_{\modelindex}\) is optimised in parallel then communicated back
+to a central node. The central node computes \(\eta\), then broadcasts
+the result back to each parallel node for more optimisation steps, which
+is repeated until some convergence criteria is reached. Vehtari et al.
+(2014) state that optimising \(\eta_{\modelindex}\) is the critical
+operation in EP, and that minimising the KL divergence corresponds to
+matching the moments of
+\(f_{\modelindex}(\phi) g_{-\modelindex}(\phi; \eta)\) and
+\(g_{\modelindex}(\phi; \eta_{\modelindex}) g_{-\modelindex}(\phi; \eta)\).
+
+\subsubsection{Analogies in Markov
+melding}\label{analogies-in-markov-melding}
+
+Consider the melded posterior
+\input{tex-input/expectation-propagation/0030-melding-factorisation.tex}
+noting that the product terms now start at \(\modelindex = 1\). Our
+definition of \(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\)
+is analogous to the cavity distribution \(g_{-\modelindex}(\phi; \eta)\)
+of Vehtari et al. (2014). The denominator density
+\(f(\phi; \mu_{\text{de}}, \sigma^{2}_{\text{de}})\) in
+Equation~\eqref{eqn:augmentation-definition} is an approximation to
+\(\pd_{\modelindex}(\psi_{\modelindex} \mid Y_{\modelindex}, \phi)\) in
+precisely the way EP suggests approximating\footnote{This notation
+  clashes, I should fix that.} \(f_{\modelindex}(\phi)\) with
+\(g_{\modelindex}(\phi; \eta_{\modelindex})\). Likewise, the numerator
+density in Equation~\eqref{eqn:augmentation-definition} is acting as the
+equivalent \emph{global} approximation \(g(\phi; \eta)\) in EP. There is
+a slight difference due to the pooled prior, which we do not\footnote{Suggesting
+  I'm not doing something right - would be worth factoring in?. I guess
+  I've just been ignoring the impact of the pooled prior.} factor into
+the computation of
+\(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\).
+
+This suggests another strategy to address conflict when melding:
+
+\begin{itemize}
+\tightlist
+\item
+  Each (intermediary target / conditional) (and the pooled prior) has
+  its own \(\tarw_{\modelindex}(\phi; \eta_{\modelindex})\) that is
+  initially proportional to a constant.
+\item
+  After a certain number of parallel MCMC samples of the resulting
+  target distributions, each
+  \(\tarw_{\modelindex}(\phi; \eta_{\modelindex})\) is updated using the
+  information from the samples of all the target distributions.
+\item
+  Iterate until there is agreement (divergence metric based on samples?
+  KS test?)
+
+  \begin{itemize}
+  \tightlist
+  \item
+    KS probably way too sensitive, think of others.
+  \item
+    What was the combination hypotheses idea Rajen was talking about?
+    Useful here?
+  \item
+    Convergence properties almost certainly unprovable
+  \end{itemize}
+\end{itemize}
 
 \subsection{Potential issues}\label{potential-issues}
 
@@ -479,7 +564,7 @@ between the two samples.
 
 }
 
-\caption{Quantile-quantile plot of sample quantiles obtained by directly sampling the melded joint posterior (x-axis) and the stage two sample quantiles obtained using the augmented stage one target (y-axis).}\label{fig:joint_augmented_compare}
+\caption{Quantile-quantile plot of sample quantiles obtained by directly sampling the melded joint posterior (y-axis) and the stage two sample quantiles obtained using the augmented stage one target (x-axis).}\label{fig:joint_augmented_compare}
 \end{figure}
 
 \section{Computational costs}\label{computational-costs}
@@ -498,7 +583,7 @@ logposterior (\(\mathcal{O}(C_{1, \text{lp}})\)), and generating and
 evaluating a proposal for the link parameter
 (\(\mathcal{O}(C_{1, \mathcal{Q}})\)). Note that
 \(\mathcal{O}(C_{1}) = \mathcal{O}(C_{1, \text{lp}} + C_{1, \mathcal{Q}})\).
-The analogous set of costs exist for the second stage target.
+The equivalent set of costs exist for the second stage target.
 
 First we have to identify that we have a problem:
 

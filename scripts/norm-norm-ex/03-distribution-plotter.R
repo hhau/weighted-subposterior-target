@@ -123,6 +123,7 @@ p1 <- ggplot(p_df, aes(x = x)) +
     )
   ) +
   xlab(expression(phi)) +
+  labs(col = "Subposterior") +
   NULL
 
 ggsave_halfheight(
