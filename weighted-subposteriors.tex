@@ -82,7 +82,7 @@
   \postauthor{\par}
       \predate{\centering\large\emph}
   \postdate{\par}
-    \date{05 August, 2019}
+    \date{06 August, 2019}
 
 \usepackage{amsmath}
 % I always seem to need tikz for something
@@ -220,61 +220,56 @@ For \(\Nm > 2\), we will accrue an additional
 additional model, which may be problematic.
 
 \subsection{\texorpdfstring{Choosing
-\(\tarw_{\modelindex}(\phi; \eta_{\modelindex})\)}{Choosing \textbackslash{}tarw\_\{\textbackslash{}modelindex\}(\textbackslash{}phi; \textbackslash{}eta\_\{\textbackslash{}modelindex\})}}\label{choosing-tarw_modelindexphi-eta_modelindex}
+\(\tarw_{1}(\phi; \eta_{1})\)}{Choosing \textbackslash{}tarw\_\{1\}(\textbackslash{}phi; \textbackslash{}eta\_\{1\})}}\label{choosing-tarw_1phi-eta_1}
 
 Say we use the samples of \(\phi\) from
-\(\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1} \mid Y_{1}, \ldots, Y_{\modelindex - 1})\)
-as a proposal for
-\(\pd_{\text{meld}, \modelindex}(\phi, \psi_{1}, \ldots, \psi_{\modelindex} \mid Y_{1}, \ldots, Y_{\modelindex})\)
-and observe the behaviour in Figure~\ref{fig:no_u_traces}. We can still
-use these samples, in combination with samples from
-\(\pd_{\modelindex}(\phi, \psi_{\modelindex} \mid Y_{\modelindex})\), to
-choose an appropriate
-\(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\).
+\input{tex-input/method/0009-intermediary-meld.tex} as a proposal for
+\(\pd_{\text{meld}}(\phi, \psi_{1}, \psi_{2} \mid Y_{1}, Y_{2})\) and
+observe the behaviour in Figure~\ref{fig:no_u_traces}. We can still use
+these samples, in combination with samples from
+\(\pd_{2}(\phi, \psi_{2} \mid Y_{2})\), to choose an appropriate
+\(\tarw_{1}(\phi; \eta_{1})\).
 
-Consider a sample of size \(\Nx\) from intermediary melded target
-\(\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1} \mid Y_{1}, \ldots, Y_{\modelindex - 1})\)
-denoted
-\(\{\tilde{\phi}_{\sampleindex, \modelindex - 1}\}_{\sampleindex = 1}^{\Nx}\).
-Using this sample we can compute the sample mean of the
-\((\modelindex - 1)^{\text{th}}\) stage target
-\(\tilde{\mu}_{\modelindex - 1} = \frac{1}{\Nx}\sum\limits_{i = 1}^{\Nx}\tilde{\phi}_{\sampleindex, \modelindex - 1}\),
+Consider a sample of size \(\Nx\) from the intermediary melded target
+\(\pd_{\text{meld}, 1}(\phi, \psi_{1} \mid Y_{1})\) denoted
+\(\{\tilde{\phi}_{\sampleindex, 1}\}_{\sampleindex = 1}^{\Nx}\). Using
+this sample we compute the sample mean of the first stage target denoted
+\(\tilde{\mu}_{1} = \frac{1}{\Nx}\sum\limits_{\sampleindex = 1}^{\Nx}\tilde{\phi}_{\sampleindex, 1}\),
 as well as the sample variance
-\(\tilde{\sigma}^{2}_{\modelindex - 1} = \frac{1}{\Nx - 1}\sum\limits_{i = 1}^{\Nx} (\tilde{\phi}_{\sampleindex, \modelindex - 1} - \tilde{\mu}_{\modelindex - 1})^{2}\).
-Analogous quantities for the \(\modelindex^{\text{th}}\) subposterior
-can then be defined using the sample of size \(\Nx\) from the
-\(\modelindex^{\text{th}}\) subposterior
-\(\pd_{\modelindex}(\phi, \psi_{\modelindex} \mid Y_{\modelindex})\) as
-\(\{\phi_{\sampleindex, \modelindex}\}_{\sampleindex = 1}^{\Nx}\). The
-sample mean and variance of the subposterior,
-\(\hat{\mu}_{\modelindex}\) and \(\hat{\sigma}^{2}_{\modelindex}\), are
-computed in the same manner.
+\(\tilde{\sigma}^{2}_{1} = \frac{1}{\Nx - 1}\sum\limits_{\sampleindex = 1}^{\Nx} (\tilde{\phi}_{\sampleindex, 1} - \tilde{\mu}_{1})^{2}\).
+Analogous quantities for the second subposterior can then be defined
+using the sample of size \(\Nx\) from the second subposterior\footnote{This
+  should probably be the stage two target, not the subposterior. Again,
+  ignoring the impact of the prior?}
+\(\pd_{2}(\phi, \psi_{2} \mid Y_{2})\) as
+\(\{\phi_{\sampleindex, 2}\}_{\sampleindex = 1}^{\Nx}\). The sample mean
+and variance of the subposterior, \(\hat{\mu}_{2}\) and
+\(\hat{\sigma}^{2}_{2}\), are computed in the same manner.
 
 These sample statistics can then be used to define an appropriate
-augmentation function
-\(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\). We now have
-to assume that the intermediary target and subposterior distributions
-can be appropriately summarised by Gaussian distributions. Denoting the
+augmentation function \(\tarw_{1}(\phi; \eta_{1})\). We now have to
+assume that the intermediary target and subposterior distributions can
+be appropriately summarised by Gaussian distributions. Denoting the
 Gaussian density function with mean \(\mu\) and variance \(\sigma^2\) as
 \(f(\phi; \mu, \sigma^2)\), we define the augmentation function as a
 ratio of Gaussian densities
 \input{tex-input/method/0040-augmentation-definition.tex} whose
 parameters we will define momentarily. The intuition is that the
 denominator density should approximate the intermediary melded target
-\(\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1} \mid Y_{1}, \ldots, Y_{\modelindex - 1})\),
-whilst the numerator should approximate
-\(\pd_{\text{meld}, \modelindex}(\phi, \psi_{1}, \ldots, \psi_{\modelindex} \mid Y_{1}, \ldots, Y_{\modelindex})\),
-which is a combination of both the \((\modelindex - 1)^{\text{th}}\)
-stage target and the \(\modelindex^{\text{th}}\) subposterior.
+\(\pd_{\text{meld}, 1}(\phi, \psi_{1} \mid Y_{1})\), whilst the
+numerator should approximate
+\(\pd_{\text{meld}, 2}(\phi, \psi_{1}, \psi_{2} \mid Y_{1}, Y_{2})\),
+which is a combination of both the first stage target and the second
+subposterior.
 
 Using this intuition we define the parameters of the denominator density
-function to be \(\mu_{\text{de}} = \tilde{\mu}_{\modelindex - 1}\) and
-\(\sigma^{2}_{\text{de}} = \tilde{\sigma}^{2}_{\modelindex - 1}\). We
-can use the well known results about products of Gaussian density
-functions, summarised in Bromiley (2003), to compute the numerator
-parameters \input{tex-input/method/0050-numerator-results.tex} and for
-compactness we define
-\(\eta_{\modelindex - 1} = \{\mu_{\text{nu}}, \sigma^{2}_{\text{nu}}, \mu_{\text{de}}, \sigma^{2}_{\text{de}}\}\).
+function to be \(\mu_{\text{de}} = \tilde{\mu}_{1}\) and
+\(\sigma^{2}_{\text{de}} = \tilde{\sigma}^{2}_{1}\). We can use the well
+known results about products of Gaussian density functions, summarised
+in Bromiley (2003), to compute the numerator parameters
+\input{tex-input/method/0050-numerator-results.tex} and for compactness
+we define
+\(\eta_{1} = \{\mu_{\text{nu}}, \sigma^{2}_{\text{nu}}, \mu_{\text{de}}, \sigma^{2}_{\text{de}}\}\).
 
 In cases where all densities of interest are Gaussian,
 \(f(\phi; \mu_{\text{de}}, \sigma^2_{\text{de}})\) precisely summarises
@@ -289,17 +284,35 @@ heavier tails than a Gaussian distribution, we may have concerns about
 the integrability of the target in
 Equation~\eqref{eqn:stage-one-target}. However, by construction
 \(\sigma_{\text{nu}}^{2} < \sigma_{\text{de}}^{2}\), which ensures that
-\(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\) is integrable.
-Given the original target
+\(\tarw_{1}(\phi; \eta_{1})\) is integrable. Given the original target
 \(\pd_{1}(\phi, \psi_{1}, Y_{1}) \mathop{/} \pd_{1}(\phi)\) is
-integrable, and the augmented target is the product of two integrable
-densities, the augmented target is also integrable. This gives the
-practitioner some room to tweak
-\(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\); as long as
+integrable\footnote{Not obviously true without pooled prior term.}, and
+the augmented target is the product of two integrable densities, the
+augmented target is also integrable. This gives the practitioner some
+room to tweak \(\tarw_{1}(\phi; \eta_{1})\); as long as
 \(\sigma_{\text{nu}}^{2} < \sigma_{\text{de}}^{2}\) is satisfied, the
 target is integrable. Thus \(\sigma_{\text{nu}}^{2}\) can be
-artificially increased, to a known limit, to ameliorate the impact of
-any approximation error.
+artificially increased, to a known limit, to partially ameliorate the
+impact of the approximation error.
+
+\subsection{\texorpdfstring{\(\Nm > 2\)}{\textbackslash{}Nm \textgreater{} 2}}\label{nm-2}
+
+Applying this methodology in the \(\Nm > 2\) case is awkward.
+Disagreement between stage \(\modelindex - 1\) and \(\modelindex\)
+requires sampling an augmented version of \(\modelindex - 1\). When
+using the multi-stage MH-within-Gibbs setting, this requires resampling
+all previous \(\modelindex - 1\) stages. Each of these stages will
+require augmenting, in a stage specific way, to ensure that the
+interstage conflict is not simply `moved' to earlier stages.
+
+Notationally, the interstage conflict would exist between the
+intermediary melded target
+\(\pd_{\text{meld}, \modelindex - 1}(\phi, \psi_{1}, \ldots, \psi_{\modelindex - 1}\mid Y_{1}, \ldots, Y_{\modelindex - 1})\)
+and the \(m^{\text{th}}\) subposterior
+\(\pd_{\modelindex}(\phi, \psi_{\modelindex} \mid Y_{\modelindex})\).
+The augmentation function for the \((\modelindex - 1)^{\text{th}}\)
+stage target is
+\(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\).
 
 \subsection{Similarities to Vehtari et al.
 (2014)}\label{similarities-to-vehtarietal14}
@@ -328,7 +341,7 @@ which is an initial approximation to the target density. For each site
 \item
   Compute the cavity distribution \(g_{-\modelindex}(\phi; \eta)\),
   which is an algebraic calculation for each site as \(g\) is a member
-  of the exponential family.
+  of an exponential family.
 \item
   Improve the site approximation
   \(g_{\modelindex}(\phi; \eta_{\modelindex})\) by optimising
@@ -372,34 +385,31 @@ a slight difference due to the pooled prior, which we do not\footnote{Suggesting
 the computation of
 \(\tarw_{\modelindex - 1}(\phi; \eta_{\modelindex - 1})\).
 
-This suggests another strategy to address conflict when melding:
+This suggests adopting the EP strategy to address conflict when melding,
+which may be particularly useful in the \(\Nm > 2\) case.
 
-\begin{itemize}
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  Each (intermediary target / conditional) (and the pooled prior) has
-  its own \(\tarw_{\modelindex}(\phi; \eta_{\modelindex})\) that is
-  initially proportional to a constant.
+  Sample \(\ppoolphi\) and the marginalised subposteriors
+  \(\pd_{1}(\phi, \psi_{1}, Y_{1}) \mathop{/} \pd_{1}(\phi), \,\, \ldots\,\, , \pd_{\Nm}(\phi, \psi_{\Nm}, Y_{\Nm}) \mathop{/} \pd_{\Nm}(\phi)\)
+  in parallel (on separate nodes).
 \item
-  After a certain number of parallel MCMC samples of the resulting
-  target distributions, each
-  \(\tarw_{\modelindex}(\phi; \eta_{\modelindex})\) is updated using the
-  information from the samples of all the target distributions.
+  Approximate each distribution with
+  \(g_{\modelindex}(\phi; \eta_{\modelindex})\).
 \item
-  Iterate until there is agreement (divergence metric based on samples?
-  KS test?)
-
-  \begin{itemize}
-  \tightlist
-  \item
-    KS probably way too sensitive, think of others.
-  \item
-    What was the combination hypotheses idea Rajen was talking about?
-    Useful here?
-  \item
-    Convergence properties almost certainly unprovable
-  \end{itemize}
-\end{itemize}
+  Send the results back to a central node, and compute the global
+  approximation \(g(\phi; \eta)\).
+\item
+  Broadcast the global approximation back to each node.
+\item
+  Each node then computes their specific cavity distribution, and
+  samples from the resulting tilted distribution.
+\item
+  Iterate step 3 -- 5 until there is convergence in the global
+  approximation.
+\end{enumerate}
 
 \subsection{Potential issues}\label{potential-issues}
 
@@ -432,11 +442,14 @@ This suggests another strategy to address conflict when melding:
   \end{itemize}
 \item
   Can use ESS as a diagnostic for particle degeneracy?
+\item
+  In the case of no overlap, we are sensitive to the tails of the
+  approximation (in the EP setting).
 \end{itemize}
 
-\section{Example - normal normal}\label{example---normal-normal}
+\section{Example: two Gaussians}\label{example-two-gaussians}
 
-Starting from the same normal-normal model used to demonstrate the
+Starting from the same Gaussian-Gaussian model used to demonstrate the
 importance of accurately estimating the prior marginal distribution, we
 adjust some of the hyperparmeters to manufacture disjoint subposteriors.
 There are \(\Nm = 2\) models, with common parameter \(\phi\),
@@ -454,7 +467,7 @@ the subposterior distributions in Figure~\ref{fig:subposteriors}.
 
 }
 
-\caption{Disjoint subposteriors for the normal normal example.}\label{fig:subposteriors}
+\caption{Disjoint subposteriors for the two Gaussian example.}\label{fig:subposteriors}
 \end{figure}
 
 The pooled prior is formed by linear pooling. For the mulit-stage
@@ -465,7 +478,7 @@ Equation~\eqref{eqn:stage-one-target}.
 \(\text{u}_{1}(\phi)\).}{Stage one target and \textbackslash{}text\{u\}\_\{1\}(\textbackslash{}phi).}}\label{stage-one-target-and-textu_1phi.}
 
 Here we choose \(\text{u}_{1}(\phi)\) via the method described in
-Section~\ref{choosing-tarw_modelindexphi-eta_modelindex}.
+Section~\ref{choosing-tarw_1phi-eta_1}.
 Figure~\ref{fig:u_func_augmented_target} displays \(\text{u}_{1}(\phi)\)
 (right panel) and the augmented target
 \(\tilde{\pd}_{\text{meld}, 1}(\phi, \psi_{1}, Y_{1})\) (left panel).
@@ -489,7 +502,7 @@ following methods:
 \begin{itemize}
 \tightlist
 \item
-  Multi-stage sampler, no augmentation function (normal melding).
+  Multi-stage sampler, no augmentation function (standard melding).
 \item
   Multi-stage sampler, \emph{with} augmentation function.
 \item
@@ -501,8 +514,8 @@ numerically challenging. I have yet to find the calculations that
 introduce the numerical inaccuracy I observe.
 
 \paragraph{\texorpdfstring{Sequential MH, with no \(\text{u}_{1}(\phi)\)
-(normal
-melding)}{Sequential MH, with no \textbackslash{}text\{u\}\_\{1\}(\textbackslash{}phi) (normal melding)}}\label{sequential-mh-with-no-textu_1phi-normal-melding}
+(standard
+melding)}{Sequential MH, with no \textbackslash{}text\{u\}\_\{1\}(\textbackslash{}phi) (standard melding)}}\label{sequential-mh-with-no-textu_1phi-standard-melding}
 
 Here we apply the multi-stage sampler with no augmentation function, or
 equivalently set \(\tarw_{1}(\phi; \eta_{1}) = 1\). The traceplots in
